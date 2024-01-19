@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculation League</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+        }
+        #questionContainer {
+            display: none;
+            margin: 20px 0;
+        }
+        #question {
+            margin: 20px 0;
+            font-size: 30px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .math-table {
+        width: 100%;
+        text-align: right; /* Align numbers to the right */
+        font-family: monospace; /* Ensure consistent character widths */
+        border-collapse: collapse; /* Remove any default table spacing */
+}
+
+        .math-table .number {
+        padding-right: 10px; /* Add some padding to the right of numbers */
+}
+
+        .math-table .operator {
+        padding-left: 10px; /* Add some padding to the left of operators */
+}
+        #timer {
+            font-size: 24px;
+            margin: 10px;
+        }
+        #correctAnswersCounter, #stopwatch {
+            position: fixed;
+            bottom: 10px;
+            font-size: 20px;
+        }
+        #correctAnswersCounter {
+            left: 10px;
+        }
+        #stopwatch {
+            right: 10px;
+        }
+        @media screen and (min-width: 768px) {
+            .vertical-format {
+                width: 50%;
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculation League</h1>
+        <div>
+                <label for="roomName">Room Name:</label>
+                <input type="text" id="roomName" placeholder="Enter room name">
+            </div>
+            <div>
+                <label for="playerName">Player Name:</label>
+                <input type="text" id="playerName" placeholder="Enter your name">
+            </div>
+        <div>
+            <label for="mode">Select Mode:</label>
+            <select id="mode">
+                <option value="qualification">Qualification</option>
+                <option value="regularSeason">Regular Season</option>
+                <option value="playoffs">Playoffs</option>
+                <option value="finals">Finals</option>
+            </select>
+        </div>
+        <div>
+                <input type="radio" id="numQuestionsOption" name="gameMode" value="numQuestions" checked>
+                <label for="numQuestionsOption">Number of Questions:</label>
+                <input type="number" id="numQuestions" min="1" max="100" value="1" disabled>
+            </div>
+            <div>
+                <input type="radio" id="leagueMatchOption" name="gameMode" value="leagueMatch">
+                <label for="leagueMatchOption">League Match</label>
+            </div>
+        
+        <button id="startButton">Start</button>
+        <button id="toggleDirectionButton">Toggle Text Direction</button>
+        <div id="questionContainer">
+            <div id="question"></div>
+            <input type="number" id="answer">
+            <button id="submitAnswer">Submit Answer</button>
+        </div>
+        <div id="correctAnswersCounter">Correct Answers: 0</div>
+        <div id="stopwatch">Elapsed Time: 0s</div>
+        <div id="timer">30</div>
+        <div id="results"></div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentQuestion = {};
+        let questionTimer;
+        let elapsedTimeTimer;
+        let startTime;
+        let players = {};
+        let currentRoom = ''; // Add a global variable to store the current room name
+        let gameEnded = false;
+        
+        socket.on('joinRoom', (roomName, playerName) => {
+        players[socket.id] = playerName;
+        });
+
+        socket.on('waitingForPlayer', (message) => {
+        alert(message); // Or use any other method to display the message
+    });
+
+        document.querySelectorAll('input[name="gameMode"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if(this.value === 'numQuestions') {
+                document.getElementById('numQuestions').disabled = false;
+            } else {
+                document.getElementById('numQuestions').disabled = true;
+            }
+        });
+    });
+
+    document.getElementById('startButton').addEventListener('click', () => {
+        const roomName = document.getElementById('roomName').value;
+        const playerName = document.getElementById('playerName').value;
+        const selectedMode = document.getElementById('mode').value;
+    
+    const isLeagueMatch = document.getElementById('leagueMatchOption').checked;
+    let numQuestions = 1;
+    if (isLeagueMatch) {
+        numQuestions = 500; // Set a large number for league matches
+    } else {
+        numQuestions = parseInt(document.getElementById('numQuestions').value, 10);
+    }
+    socket.emit('joinRoom', roomName, playerName);
+    currentRoom = roomName; // Update currentRoom when the player joins a room
+    
+    socket.emit('startGame', roomName, { selectedMode, numQuestions, isLeagueMatch });
+    
+    startElapsedTimeTimer();
+});
+socket.on('newQuestion', (question) => {
+    currentQuestion = question;
+    displayQuestion(question);
+    startQuestionTimer(); // Reset the timer for the new question
+});
+document.getElementById('answer').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            submitAnswer();
+            event.preventDefault(); // Prevent the default action (form submission)
+        }
+    });
+
+    let isRightToLeft = false;
+
+function toggleTextDirection() {
+    isRightToLeft = !isRightToLeft;
+    const answerInput = document.getElementById('answer');
+    answerInput.style.direction = isRightToLeft ? 'rtl' : 'ltr';
+    answerInput.focus(); // Auto-focus on the answer box after toggling
+}
+
+document.getElementById('toggleDirectionButton').addEventListener('click', toggleTextDirection);
+
+document.getElementById('answer').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        submitAnswer();
+        event.preventDefault(); // Prevent the default action (form submission)
+    } else if (isRightToLeft && event.key.length === 1) {
+        event.preventDefault(); // Prevent the default input behavior
+        this.value = event.key + this.value;
+    }
+});
+
+    function formatQuestionVertically(question) {
+    if (typeof question !== 'string') {
+        return '';
+    }
+
+    if (question.includes('^')) {
+        return `<div style="text-align: right; font-family: monospace;">${question}</div>`;
+    }
+
+    let parts = question.split(/(\d+)/).filter(p => p);
+
+    // Calculate the maximum length of the number parts for right alignment
+    let maxLength = Math.max(...parts.filter(part => !isNaN(part.trim())).map(num => num.length));
+
+    // Start constructing the table HTML
+    let tableHTML = '<table class="math-table">';
+
+    // Iterate over the parts to construct table rows
+    parts.forEach(part => {
+        if (!isNaN(part.trim())) { // If the part is a number
+            let paddedNumber = part.trim().padStart(maxLength, ' '); // Pad the number
+            tableHTML += `<tr><td class="number">${paddedNumber}</td></tr>`;
+        } else { // If the part is an operator or parentheses
+            // Place the operator in the last cell of the previous row
+            tableHTML = tableHTML.replace(/<\/tr>$/, `<td class="operator">${part}</td></tr>`);
+        }
+    });
+
+    // Close the table HTML
+    tableHTML += '</table>';
+
+    return tableHTML;
+}
+
+function submitAnswer() {
+    const answer = parseFloat(document.getElementById('answer').value) || 0;
+    const playerId = socket.id;
+    socket.emit('submitAnswer', currentRoom, answer, playerId);
+    
+    document.getElementById('answer').value = ''; // Clear the input
+    document.getElementById('answer').focus(); // Focus back on the answer input after submission
+}
+
+
+        socket.on('scoreUpdate', (scores) => {
+        updateScores(scores);
+    });
+
+function updateScores(scores) {
+    let scoreDisplayText = 'Scores: ';
+    Object.entries(scores).forEach(([playerName, score]) => {
+        scoreDisplayText += `${playerName}: ${score}, `;
+    });
+    document.getElementById('correctAnswersCounter').textContent = scoreDisplayText.slice(0, -2);
+}
+
+socket.on('endGame', (results) => {
+    if (!gameEnded) {
+        clearInterval(elapsedTimeTimer); // Stop the elapsed time timer
+        displayFinalResults(results);
+        gameEnded = true; // Set the flag to true
+    } else {
+    }
+});
+
+function displayFinalResults(results) {
+    let elapsedTime = Math.round((new Date() - startTime) / 1000);
+    let finalResultsMessage = "Final Results:\n";
+
+    for (const playerName in results) {
+        if (playerName !== 'winner') {
+            finalResultsMessage += `${playerName}: ${results[playerName]} points\n`;
+        }
+    }
+
+    finalResultsMessage += `Winner: ${results['winner']}\n`;
+    finalResultsMessage += `Total Elapsed Time: ${elapsedTime} seconds`;
+
+    alert(finalResultsMessage);
+}
+
+    function resetGameState() {
+        gameEnded = false;
+    }
+
+    document.getElementById('startButton').addEventListener('click', () => {
+    resetGameState();
+    });
+
+    function displayQuestion(question) {
+    if (question && question.text) {
+        const questionElement = document.getElementById('question');
+
+        if (question.isFromList) {
+            questionElement.innerHTML = formatQuestionVertically(question.text);
+            questionElement.classList.add('vertical-format');
+        } else {
+            questionElement.textContent = question.text;
+            questionElement.classList.remove('vertical-format');
+        }
+
+        document.getElementById('questionContainer').style.display = 'block';
+        document.getElementById('answer').value = '';
+        document.getElementById('answer').focus();
+        startQuestionTimer();
+    } else {
+    }
+}
+function startQuestionTimer() {
+    let timeLeft = 30; // 30 seconds for each question
+    document.getElementById('timer').textContent = timeLeft;
+    
+    clearInterval(questionTimer); // Clear existing timer
+    
+    questionTimer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(questionTimer);
+            socket.emit('timerExpired', currentRoom, socket.id); // Notify server that time has expired
+        }
+    }, 1000);
+}
+    function startElapsedTimeTimer() {
+        startTime = new Date();
+        clearInterval(elapsedTimeTimer); // Clear existing timer
+        elapsedTimeTimer = setInterval(() => {
+            const elapsed = Math.round((new Date() - startTime) / 1000);
+            document.getElementById('stopwatch').textContent = `Elapsed Time: ${elapsed}s`;
+        }, 1000);
+    }
+
+    document.getElementById('submitAnswer').addEventListener('click', submitAnswer);
+    </script>
+</body>
+</html>
