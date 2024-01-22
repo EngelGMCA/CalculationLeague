@@ -19,8 +19,55 @@ const io = socketIo(server);
 
 const games = {}; // Store game state for each room
 
+function findWaitingPlayers() {
+    console.log("Checking for waiting players in all rooms...");
+    let waitingInfo = [];
+    for (const [roomName, game] of Object.entries(games)) {
+        console.log(`Room: ${roomName}, Players: ${Object.keys(game.players).length}`);
+        if (Object.keys(game.players).length === 1) {
+            const waitingPlayerName = Object.values(game.players)[0];
+            if (game.gameSettings) {
+                const { selectedMode, numQuestions, isLeagueMatch } = game.gameSettings;
+                waitingInfo.push({
+                    roomName,
+                    playerName: waitingPlayerName,
+                    gameSettings: {
+                        selectedMode,
+                        numQuestions,
+                        isLeagueMatch
+                    }
+                });
+            } else {
+                waitingInfo.push({
+                    roomName,
+                    playerName: waitingPlayerName,
+                    gameSettings: null
+                });
+            }
+            console.log(`Found waiting player: ${waitingPlayerName} in room: ${roomName}`);
+        }
+    }
+    console.log("Waiting players info:", waitingInfo);
+    return waitingInfo;
+}
+
 io.on('connection', (socket) => {
-    console.log('A user connected');
+    console.log(`${new Date().toISOString()} - A user connected. Socket ID: ${socket.id}`);
+
+    setTimeout(() => {
+    const waitingPlayers = findWaitingPlayers();
+    console.log(`${new Date().toISOString()} - Checking waiting players for new connection:`, waitingPlayers);
+    if (waitingPlayers.length > 0) {
+        waitingPlayers.forEach(({ roomName, playerName, gameSettings }) => {
+            let settingsDescription = gameSettings && gameSettings.isLeagueMatch ? 
+                                          "League Match" : 
+                                          `Number of Questions: ${gameSettings ? gameSettings.numQuestions : ''}`;
+            let modeDescription = gameSettings ? gameSettings.selectedMode : '';
+            console.log(`${new Date().toISOString()} - Notifying about waiting player: ${playerName} in ${roomName}`);
+            socket.emit('playerWaiting', `${playerName} is waiting in ${roomName} - Mode: ${modeDescription}, Settings: ${settingsDescription}`);
+        });
+    }
+}, 3000);
 
     socket.on('joinRoom', (roomName, playerName) => {
         socket.join(roomName);
@@ -31,7 +78,8 @@ io.on('connection', (socket) => {
                 questions: [],
                 playerQuestionIndices: {},
                 scores: {},
-                gameStarted: false  // Track if the game has started
+                gameStarted: false,  // Track if the game has started
+                gameSettings: {}
             };
         }
         games[roomName].players[socket.id] = playerName;
@@ -130,6 +178,8 @@ function startGame(roomName) {
         }
 
         sendQuestionToRoom(roomName);
+
+        io.to(roomName).emit('startTimer');
     } 
 }
 
@@ -338,5 +388,4 @@ function calculateResults(game) {
 }
 
 server.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}/`);
-});
+    console.log(`Server running at http://localhost:${port}/`);});

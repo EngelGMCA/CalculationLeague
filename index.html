@@ -109,6 +109,9 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
+        socket.on('connect', () => {
+        console.log('Connected to server');
+});
         let currentQuestion = {};
         let questionTimer;
         let elapsedTimeTimer;
@@ -116,6 +119,11 @@
         let players = {};
         let currentRoom = ''; // Add a global variable to store the current room name
         let gameEnded = false;
+
+        socket.on('playerWaiting', (message) => {
+            console.log('Received player waiting message:', message);
+            alert(message);
+});
         
         socket.on('joinRoom', (roomName, playerName) => {
         players[socket.id] = playerName;
@@ -147,12 +155,18 @@
     } else {
         numQuestions = parseInt(document.getElementById('numQuestions').value, 10);
     }
+
+    const gameSettings = {
+        selectedMode,
+        numQuestions,
+        isLeagueMatch
+    };
+    
     socket.emit('joinRoom', roomName, playerName);
     currentRoom = roomName; // Update currentRoom when the player joins a room
     
     socket.emit('startGame', roomName, { selectedMode, numQuestions, isLeagueMatch });
     
-    startElapsedTimeTimer();
 });
 socket.on('newQuestion', (question) => {
     currentQuestion = question;
@@ -203,15 +217,16 @@ document.getElementById('answer').addEventListener('keydown', function(event) {
 
     // Start constructing the table HTML
     let tableHTML = '<table class="math-table">';
+    let operator = '';
 
     // Iterate over the parts to construct table rows
     parts.forEach(part => {
         if (!isNaN(part.trim())) { // If the part is a number
             let paddedNumber = part.trim().padStart(maxLength, ' '); // Pad the number
-            tableHTML += `<tr><td class="number">${paddedNumber}</td></tr>`;
+            tableHTML += `<tr><td class="operator">${operator}</td><td class="number">${paddedNumber}</td></tr>`;
+            operator = ''; // Clear the operator after using it
         } else { // If the part is an operator or parentheses
-            // Place the operator in the last cell of the previous row
-            tableHTML = tableHTML.replace(/<\/tr>$/, `<td class="operator">${part}</td></tr>`);
+            operator = part; // Save the operator to be used in the next row
         }
     });
 
@@ -309,6 +324,10 @@ function startQuestionTimer() {
             socket.emit('timerExpired', currentRoom, socket.id); // Notify server that time has expired
         }
     }, 1000);
+
+    socket.on('startTimer', () => {
+    startElapsedTimeTimer();
+});
 }
     function startElapsedTimeTimer() {
         startTime = new Date();
