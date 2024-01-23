@@ -108,9 +108,21 @@
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+    window.onload = () => {
+        const storedPlayerName = localStorage.getItem('playerName');
+        const storedRoomName = localStorage.getItem('roomName');
+        if (storedPlayerName && storedRoomName) {
+            // Prefill the playerName and roomName fields
+            document.getElementById('playerName').value = storedPlayerName;
+            document.getElementById('roomName').value = storedRoomName;
+        }
+    };
+
         const socket = io();
         socket.on('connect', () => {
         console.log('Connected to server');
+        const playerName = document.getElementById('playerName').value;
+        players[socket.id] = playerName;
 });
         let currentQuestion = {};
         let questionTimer;
@@ -121,7 +133,6 @@
         let gameEnded = false;
 
         socket.on('playerWaiting', (message) => {
-            console.log('Received player waiting message:', message);
             alert(message);
 });
         
@@ -146,10 +157,15 @@
     document.getElementById('startButton').addEventListener('click', () => {
         const roomName = document.getElementById('roomName').value;
         const playerName = document.getElementById('playerName').value;
+        players[socket.id] = playerName;
+
+        localStorage.setItem('playerName', playerName);
+        localStorage.setItem('roomName', roomName);
+
         const selectedMode = document.getElementById('mode').value;
-    
-    const isLeagueMatch = document.getElementById('leagueMatchOption').checked;
-    let numQuestions = 1;
+        const isLeagueMatch = document.getElementById('leagueMatchOption').checked;
+        let numQuestions = 1;
+
     if (isLeagueMatch) {
         numQuestions = 500; // Set a large number for league matches
     } else {
@@ -169,6 +185,7 @@
     
 });
 socket.on('newQuestion', (question) => {
+    console.log(`New question received for player: ${players[socket.id]}: ${question.text}`);
     currentQuestion = question;
     displayQuestion(question);
     startQuestionTimer(); // Reset the timer for the new question
@@ -181,6 +198,39 @@ document.getElementById('answer').addEventListener('keypress', function(event) {
     });
 
     let isRightToLeft = false;
+
+    socket.on('playerRejoined', (playerName) => {
+    console.log(`${playerName} has rejoined the room`);
+    if (playerName === document.getElementById('playerName').value) {
+        restoreGameStateForRejoiningPlayer();
+    }
+});
+
+function restoreGameStateForRejoiningPlayer() {
+    const roomName = document.getElementById('roomName').value;
+    const playerName = document.getElementById('playerName').value;
+    console.log(`Requesting current game state for player: ${playerName} in room: ${roomName}`);
+    socket.emit('requestCurrentGameState', roomName, playerName);
+}
+
+socket.on('currentGameState', (gameState) => {
+    console.log(`Received currentGameState for ${document.getElementById('playerName').value}:`, gameState);
+    if (gameState) {
+        console.log(`Updating UI with the received game state for ${document.getElementById('playerName').value}`);
+        displayQuestion(gameState.nextQuestion);
+        updateScores(gameState.scores);
+
+        // Here we set the startTime using the elapsed time from the server
+        startTime = new Date(new Date().getTime() - gameState.elapsedTime * 1000);
+        updateElapsedTime(gameState.elapsedTime);
+        setTimerForNextQuestion(gameState.timeLeftForNextQuestion);
+
+        document.getElementById('questionContainer').style.display = 'block';
+        document.getElementById('answer').focus();
+    } else {
+        console.log(`Game state is undefined or null for ${document.getElementById('playerName').value}`);
+    }
+});
 
 function toggleTextDirection() {
     isRightToLeft = !isRightToLeft;
@@ -212,14 +262,11 @@ document.getElementById('answer').addEventListener('keydown', function(event) {
 
     let parts = question.split(/(\d+)/).filter(p => p);
 
-    // Calculate the maximum length of the number parts for right alignment
     let maxLength = Math.max(...parts.filter(part => !isNaN(part.trim())).map(num => num.length));
 
-    // Start constructing the table HTML
     let tableHTML = '<table class="math-table">';
     let operator = '';
 
-    // Iterate over the parts to construct table rows
     parts.forEach(part => {
         if (!isNaN(part.trim())) { // If the part is a number
             let paddedNumber = part.trim().padStart(maxLength, ' '); // Pad the number
@@ -238,8 +285,11 @@ document.getElementById('answer').addEventListener('keydown', function(event) {
 
 function submitAnswer() {
     const answer = parseFloat(document.getElementById('answer').value) || 0;
-    const playerId = socket.id;
-    socket.emit('submitAnswer', currentRoom, answer, playerId);
+    const playerName = players[socket.id];
+    console.log(`Emitting answer. Player: ${playerName}, Answer: ${answer}`); 
+    socket.emit('submitAnswer', currentRoom, answer, playerName);
+
+    console.log(`Submitting answer: ${answer}, Room: ${currentRoom}, Player: ${playerName}`);
     
     document.getElementById('answer').value = ''; // Clear the input
     document.getElementById('answer').focus(); // Focus back on the answer input after submission
@@ -256,6 +306,24 @@ function updateScores(scores) {
         scoreDisplayText += `${playerName}: ${score}, `;
     });
     document.getElementById('correctAnswersCounter').textContent = scoreDisplayText.slice(0, -2);
+}
+
+function updateElapsedTime(elapsedTime) {
+    document.getElementById('stopwatch').textContent = `Elapsed Time: ${elapsedTime}s`;
+    startElapsedTimeTimer(elapsedTime);
+}
+
+function setTimerForNextQuestion(timeLeft) {
+    clearInterval(questionTimer);
+    questionTimer = setInterval(() => {
+        document.getElementById('timer').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(questionTimer);
+            // Handle expiration (e.g., automatically submit answer or move to next question)
+        } else {
+            timeLeft--;
+        }
+    }, 1000);
 }
 
 socket.on('endGame', (results) => {
@@ -321,7 +389,8 @@ function startQuestionTimer() {
         document.getElementById('timer').textContent = timeLeft;
         if (timeLeft <= 0) {
             clearInterval(questionTimer);
-            socket.emit('timerExpired', currentRoom, socket.id); // Notify server that time has expired
+            const playerName = players[socket.id];
+            socket.emit('timerExpired', currentRoom, playerName); // Send playerName instead of socket.id
         }
     }, 1000);
 
@@ -329,14 +398,18 @@ function startQuestionTimer() {
     startElapsedTimeTimer();
 });
 }
-    function startElapsedTimeTimer() {
+function startElapsedTimeTimer() {
+    if (!startTime) {
+        // Set startTime only if it's not already set
         startTime = new Date();
-        clearInterval(elapsedTimeTimer); // Clear existing timer
-        elapsedTimeTimer = setInterval(() => {
-            const elapsed = Math.round((new Date() - startTime) / 1000);
-            document.getElementById('stopwatch').textContent = `Elapsed Time: ${elapsed}s`;
-        }, 1000);
     }
+
+    clearInterval(elapsedTimeTimer);
+    elapsedTimeTimer = setInterval(() => {
+        const elapsed = Math.round((new Date().getTime() - startTime.getTime()) / 1000);
+        document.getElementById('stopwatch').textContent = `Elapsed Time: ${elapsed}s`;
+    }, 1000);
+}
 
     document.getElementById('submitAnswer').addEventListener('click', submitAnswer);
     </script>

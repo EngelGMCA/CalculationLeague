@@ -20,7 +20,6 @@ const io = socketIo(server);
 const games = {}; // Store game state for each room
 
 function findWaitingPlayers() {
-    console.log("Checking for waiting players in all rooms...");
     let waitingInfo = [];
     for (const [roomName, game] of Object.entries(games)) {
         console.log(`Room: ${roomName}, Players: ${Object.keys(game.players).length}`);
@@ -44,32 +43,32 @@ function findWaitingPlayers() {
                     gameSettings: null
                 });
             }
-            console.log(`Found waiting player: ${waitingPlayerName} in room: ${roomName}`);
         }
     }
-    console.log("Waiting players info:", waitingInfo);
     return waitingInfo;
 }
+const playerSockets = {}; // New object to map player names to socket IDs
 
 io.on('connection', (socket) => {
-    console.log(`${new Date().toISOString()} - A user connected. Socket ID: ${socket.id}`);
+    console.log(`A user connected. Socket ID: ${socket.id}`);
 
     setTimeout(() => {
     const waitingPlayers = findWaitingPlayers();
-    console.log(`${new Date().toISOString()} - Checking waiting players for new connection:`, waitingPlayers);
     if (waitingPlayers.length > 0) {
         waitingPlayers.forEach(({ roomName, playerName, gameSettings }) => {
             let settingsDescription = gameSettings && gameSettings.isLeagueMatch ? 
                                           "League Match" : 
                                           `Number of Questions: ${gameSettings ? gameSettings.numQuestions : ''}`;
             let modeDescription = gameSettings ? gameSettings.selectedMode : '';
-            console.log(`${new Date().toISOString()} - Notifying about waiting player: ${playerName} in ${roomName}`);
             socket.emit('playerWaiting', `${playerName} is waiting in ${roomName} - Mode: ${modeDescription}, Settings: ${settingsDescription}`);
         });
     }
 }, 3000);
 
-    socket.on('joinRoom', (roomName, playerName) => {
+socket.on('joinRoom', (roomName, playerName) => {
+    console.log(`Player ${playerName} attempting to join room: ${roomName}`);
+    playerSockets[playerName] = socket.id;
+        console.log(`Player ${playerName} mapped to socket ID: ${socket.id}`);
         socket.join(roomName);
 
         if (!games[roomName]) {
@@ -82,16 +81,29 @@ io.on('connection', (socket) => {
                 gameSettings: {}
             };
         }
-        games[roomName].players[socket.id] = playerName;
-        games[roomName].scores[socket.id] = 0; // Initialize score
+
+        if (!(playerName in games[roomName].playerQuestionIndices)) {
+            games[roomName].playerQuestionIndices[playerName] = 0;
+        }
+
+        if (games[roomName].players[playerName]) {
+        console.log(`Player ${playerName} rejoining room ${roomName}`);
+
+        io.to(playerSockets[playerName]).emit('playerRejoined', playerName)
+        } else {
+            console.log(`Player ${playerName} joined room ${roomName}. Players in room: ${Object.keys(games[roomName].players)}`);
+            games[roomName].players[playerName] = playerName;
+            games[roomName].scores[playerName] = 0; 
+
+            games[roomName].playerQuestionIndices[playerName] = 0;
+        }
+
+        socket.join(roomName);
 
         if (Object.keys(games[roomName].players).length === 1) {
             socket.emit('waitingForPlayer', 'Room joined, waiting for player 2');
-        }
-        games[roomName].playerQuestionIndices[socket.id] = 0;
-
-        if (Object.keys(games[roomName].players).length === 2) {
-            startGame(roomName);  // Call startGame here
+        } else if (Object.keys(games[roomName].players).length === 2 && !games[roomName].gameStarted) {
+            startGame(roomName);  // Start the game if two players are present and the game hasn't started
         }
     });
 
@@ -108,13 +120,31 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('submitAnswer', (roomName, submittedAnswer, playerId) => {
+    socket.on('requestCurrentGameState', (roomName, playerName) => {
+        console.log(`Current game state requested by ${playerName} in room ${roomName}`);
+        if (games[roomName] && games[roomName].players[playerName]) {
+            const playerSocketId = playerSockets[playerName];
+            const gameState = {
+                scores: games[roomName].scores,
+                nextQuestion: getNextQuestion(roomName, playerName),
+                elapsedTime: calculateElapsedTime(games[roomName].startTime),
+                timeLeftForNextQuestion: 30
+            };
+            console.log(`Sending current game state to ${playerName} (Socket ID: ${playerSocketId}):`, gameState);
+            io.to(playerSocketId).emit('currentGameState', gameState);
+        } else {
+            console.log(`Game or player not found for ${playerName} in room ${roomName}`);
+            
+        }
+    });
+
+    socket.on('submitAnswer', (roomName, submittedAnswer, playerName) => {
         const game = games[roomName];
-        if (!game) {
+        if (!game || !game.players[playerName]) {
             return;
         }
     
-        const playerIndex = game.playerQuestionIndices[playerId];
+        const playerIndex = game.playerQuestionIndices[playerName];
         if (playerIndex >= game.questions.length) {
             return;
         }
@@ -130,35 +160,49 @@ io.on('connection', (socket) => {
         } else {
             tolerance = 0.5;
         }
-    
         if (Math.abs(submittedAnswer - correctAnswer) <= tolerance) {
-            game.scores[playerId]++;
-            game.playerQuestionIndices[playerId]++;
-            sendQuestionToPlayer(roomName, playerId, game.playerQuestionIndices[playerId]);
+            game.scores[playerName]++;
+            game.playerQuestionIndices[playerName]++;
+            if (game.playerQuestionIndices[playerName] < game.questions.length) {
+                sendQuestionToPlayer(roomName, playerName, game.playerQuestionIndices[playerName]);
+            } else {
+            }
         }
     
-        // Update scores but don't send a new question if the answer is incorrect
+    
         const updatedScores = {};
-        for (const [playerSocketId, score] of Object.entries(game.scores)) {
-            const playerName = game.players[playerSocketId];
-            updatedScores[playerName] = score;
-        }
-    
-        io.to(roomName).emit('scoreUpdate', updatedScores);
-    }); 
+    for (const [name, score] of Object.entries(game.scores)) {
+        updatedScores[name] = score;
+    }
 
-socket.on('timerExpired', (roomName, playerId) => {
+    io.to(roomName).emit('scoreUpdate', updatedScores);
+    console.log(`Player ${playerName} submitted an answer in room ${roomName}. Current score: ${game.scores[playerName]}`);
+}); 
+
+socket.on('timerExpired', (roomName, playerName) => {
     const game = games[roomName];
-    if (!game || game.playerQuestionIndices[playerId] >= game.questions.length - 1) {
+    if (!game) {
         return;
     }
 
-    game.playerQuestionIndices[playerId]++;
-    sendQuestionToPlayer(roomName, playerId, game.playerQuestionIndices[playerId]);
+    if (!game.playerQuestionIndices[playerName] && game.playerQuestionIndices[playerName] !== 0) {
+        return;
+    }
+
+    if (game.playerQuestionIndices[playerName] >= game.questions.length) {
+        return;
+    }
+    game.playerQuestionIndices[playerName]++;
+    
+    if (game.playerQuestionIndices[playerName] < game.questions.length) {
+        sendQuestionToPlayer(roomName, playerName, game.playerQuestionIndices[playerName]);
+    } else {
+    }
 
     checkGameOver(roomName);
 });
 });
+
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -328,11 +372,18 @@ function generateRandomQuestion(difficulty) {
     return { text: question, answer };
 }
 
-function sendQuestionToPlayer(roomName, playerId, questionIndex) {
+function sendQuestionToPlayer(roomName, playerName, questionIndex) {
     const game = games[roomName];
     if (game && questionIndex < game.questions.length) {
         const question = game.questions[questionIndex];
-        io.to(playerId).emit('newQuestion', question);
+        const socketId = playerSockets[playerName];
+        if (socketId) {
+            io.to(socketId).emit('newQuestion', question);
+            console.log(`Question sent to player: ${playerName}, Room: ${roomName}, Question Index: ${questionIndex}`);
+        } else {
+            console.log(`Error: Socket ID not found for player: ${playerName}`);
+        }
+    } else {
     }
 }
 
@@ -344,6 +395,20 @@ function sendQuestionToRoom(roomName) {
         }
     }
 }
+
+function getNextQuestion(roomName, playerName) {
+    const game = games[roomName];
+    if (!game || !game.questions || !game.playerQuestionIndices[playerName]) {
+        return null; // Handle cases where game or player index is not found
+    }
+    const questionIndex = game.playerQuestionIndices[playerName];
+    return game.questions[questionIndex];
+}
+
+function calculateElapsedTime(startTime) {
+    return Math.round((Date.now() - startTime) / 1000);
+}
+
 function checkGameOver(roomName) {
     const game = games[roomName];
     if (!game) {
@@ -370,7 +435,6 @@ function endGameInRoom(roomName) {
         return;
     }
 
-    // Preparing the results object
     const results = {};
     for (const playerId in game.scores) {
         const playerName = game.players[playerId];
@@ -380,7 +444,6 @@ function endGameInRoom(roomName) {
     const winner = Object.keys(game.scores).reduce((a, b) => game.scores[a] > game.scores[b] ? a : b);
     results['winner'] = game.players[winner];
 
-    // Sending the results object to all clients in the room
     io.to(roomName).emit('endGame', results);
 }
 
