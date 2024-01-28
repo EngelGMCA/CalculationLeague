@@ -108,7 +108,7 @@ socket.on('joinRoom', (roomName, playerName) => {
     });
 
     socket.on('startGame', (roomName, gameSettings) => {
-        if (!games[roomName]) {
+        if (!games[roomName] || games[roomName].gameStarted) {
             return;
         }
         
@@ -124,17 +124,34 @@ socket.on('joinRoom', (roomName, playerName) => {
         console.log(`Current game state requested by ${playerName} in room ${roomName}`);
         if (games[roomName] && games[roomName].players[playerName]) {
             const playerSocketId = playerSockets[playerName];
-            const gameState = {
-                scores: games[roomName].scores,
-                nextQuestion: getNextQuestion(roomName, playerName),
-                elapsedTime: calculateElapsedTime(games[roomName].startTime),
-                timeLeftForNextQuestion: 30
-            };
-            console.log(`Sending current game state to ${playerName} (Socket ID: ${playerSocketId}):`, gameState);
-            io.to(playerSocketId).emit('currentGameState', gameState);
+            const gameStartTime = games[roomName].startTime;
+            
+            console.log('Game Start Time:', gameStartTime); // Additional log for start time
+            const currentTime = Date.now(); 
+            console.log('Current Time:', Date.now()); // Log current time
+    
+            // Make sure the start time is a number and is in the past.
+            if (typeof gameStartTime === 'number' && gameStartTime <= Date.now()) {
+                const elapsedTime = Math.round((Date.now() - gameStartTime) / 1000);
+                console.log('Elapsed Time Calculated:', elapsedTime); // Log the calculated elapsed time
+                
+                const gameState = {
+                    scores: games[roomName].scores,
+                    nextQuestion: getNextQuestion(roomName, playerName),
+                    elapsedTime: elapsedTime,
+                    timeLeftForNextQuestion: 30,
+                    startTime: gameStartTime,
+                    gameStarted: games[roomName].gameStarted
+                };
+                
+                console.log(`Sending current game state to ${playerName} (Socket ID: ${playerSocketId}):`, gameState);
+                io.to(playerSocketId).emit('currentGameState', gameState);
+            } else {
+                console.error(`Invalid game start time for room ${roomName}. Start time:`, gameStartTime);
+                // Handle the error case here, such as by emitting an error message to the client.
+            }
         } else {
             console.log(`Game or player not found for ${playerName} in room ${roomName}`);
-            
         }
     });
 
@@ -217,13 +234,15 @@ function startGame(roomName) {
 
         game.gameStarted = true;
         game.leagueMatch = settings.isLeagueMatch;
+            
         if (game.leagueMatch) {
-            game.startTime = Date.now();  // Start time for league match
+            game.startTime = Date.now();  // Set the start time for the league match
+            console.log(`Game started in room ${roomName}. Start time: ${game.startTime}`);
+            
+            io.to(roomName).emit('gameStarted', { startTime: game.startTime });
         }
 
-        sendQuestionToRoom(roomName);
-
-        io.to(roomName).emit('startTimer');
+        sendQuestionToRoom(roomName); // Send the first question to all clients in the room
     } 
 }
 
@@ -406,6 +425,9 @@ function getNextQuestion(roomName, playerName) {
 }
 
 function calculateElapsedTime(startTime) {
+    if (!startTime) {
+        return 0;
+    }
     return Math.round((Date.now() - startTime) / 1000);
 }
 

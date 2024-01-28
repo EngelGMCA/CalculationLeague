@@ -12,6 +12,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            background-color: #A0D2EB
         }
         .container {
             text-align: center;
@@ -56,6 +57,7 @@
         #stopwatch {
             right: 10px;
         }
+        
         @media screen and (min-width: 768px) {
             .vertical-format {
                 width: 50%;
@@ -131,6 +133,7 @@
         let players = {};
         let currentRoom = ''; // Add a global variable to store the current room name
         let gameEnded = false;
+        let isRejoining = false;
 
         socket.on('playerWaiting', (message) => {
             alert(message);
@@ -184,6 +187,15 @@
     socket.emit('startGame', roomName, { selectedMode, numQuestions, isLeagueMatch });
     
 });
+
+socket.on('gameStarted', (gameState) => {
+    if (gameState.startTime) {
+        startElapsedTimeTimer(gameState.startTime);
+    } else {
+        console.error("Game started without a valid start time.", gameState);
+    }
+});
+
 socket.on('newQuestion', (question) => {
     console.log(`New question received for player: ${players[socket.id]}: ${question.text}`);
     currentQuestion = question;
@@ -201,16 +213,20 @@ document.getElementById('answer').addEventListener('keypress', function(event) {
 
     socket.on('playerRejoined', (playerName) => {
     console.log(`${playerName} has rejoined the room`);
+    isRejoining = true;
     if (playerName === document.getElementById('playerName').value) {
         restoreGameStateForRejoiningPlayer();
     }
 });
 
 function restoreGameStateForRejoiningPlayer() {
-    const roomName = document.getElementById('roomName').value;
-    const playerName = document.getElementById('playerName').value;
-    console.log(`Requesting current game state for player: ${playerName} in room: ${roomName}`);
-    socket.emit('requestCurrentGameState', roomName, playerName);
+    if (isRejoining) { // Check the flag before requesting game state
+        const roomName = document.getElementById('roomName').value;
+        const playerName = document.getElementById('playerName').value;
+        console.log(`Requesting current game state for player: ${playerName} in room: ${roomName}`);
+        socket.emit('requestCurrentGameState', roomName, playerName);
+        isRejoining = false; // Reset the flag after requesting game state
+    }
 }
 
 socket.on('currentGameState', (gameState) => {
@@ -219,18 +235,25 @@ socket.on('currentGameState', (gameState) => {
         console.log(`Updating UI with the received game state for ${document.getElementById('playerName').value}`);
         displayQuestion(gameState.nextQuestion);
         updateScores(gameState.scores);
+        
+        // The crucial change is here: When we receive the gameState, we need to check if the game has already started.
+        // If it has, and if a startTime is provided, we start the elapsed time timer with it.
+        if (gameState.gameStarted && typeof gameState.startTime === 'number') {
+            console.log(`Received startTime: ${gameState.startTime}`);
+            startElapsedTimeTimer(gameState.startTime);
+        } else {
+            console.log("Invalid or missing startTime in game state.", gameState);
+        }
 
-        // Here we set the startTime using the elapsed time from the server
-        startTime = new Date(new Date().getTime() - gameState.elapsedTime * 1000);
-        updateElapsedTime(gameState.elapsedTime);
         setTimerForNextQuestion(gameState.timeLeftForNextQuestion);
-
         document.getElementById('questionContainer').style.display = 'block';
         document.getElementById('answer').focus();
     } else {
         console.log(`Game state is undefined or null for ${document.getElementById('playerName').value}`);
     }
 });
+
+
 
 function toggleTextDirection() {
     isRightToLeft = !isRightToLeft;
@@ -356,6 +379,7 @@ function displayFinalResults(results) {
     }
 
     document.getElementById('startButton').addEventListener('click', () => {
+    isRejoining = false;
     resetGameState();
     });
 
@@ -398,15 +422,16 @@ function startQuestionTimer() {
     startElapsedTimeTimer();
 });
 }
-function startElapsedTimeTimer() {
-    if (!startTime) {
-        // Set startTime only if it's not already set
-        startTime = new Date();
+function startElapsedTimeTimer(startTimeMillis) {
+    clearInterval(elapsedTimeTimer);
+
+    if (typeof startTimeMillis !== 'number') {
+        console.error('Invalid startTimeMillis:', startTimeMillis);
+        return;
     }
 
-    clearInterval(elapsedTimeTimer);
     elapsedTimeTimer = setInterval(() => {
-        const elapsed = Math.round((new Date().getTime() - startTime.getTime()) / 1000);
+        const elapsed = Math.round((new Date().getTime() - startTimeMillis) / 1000);
         document.getElementById('stopwatch').textContent = `Elapsed Time: ${elapsed}s`;
     }, 1000);
 }
