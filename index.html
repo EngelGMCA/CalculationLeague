@@ -1,26 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculation League</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            height: 90vh;
             margin: 0;
-            background-color: #A0D2EB
+            background-color: #A0D2EB;
         }
+
+        h1 {
+            color: #2c3e50;
+            text-shadow: 2px 2px 4px #7f8c8d;
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+        }
+
+        label {
+            display: inline-block;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="radio"] + label {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        select {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: white;
+            box-sizing: border-box;
+        }
+
+        .dropdown-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #notification-bar {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
         .container {
             text-align: center;
         }
+
         #questionContainer {
             display: none;
             margin: 20px 0;
         }
+
         #question {
             margin: 20px 0;
             font-size: 30px;
@@ -28,48 +95,593 @@
             letter-spacing: 2px;
         }
 
+        #toggleSign {
+            background-color: #4CAF50;
+            width: 60px;
+            height: 60px;
+            font-size: 25px;
+            margin-right: 5px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px #2980b9;
+        }
+
         .math-table {
-        width: 100%;
-        text-align: right; /* Align numbers to the right */
-        font-family: monospace; /* Ensure consistent character widths */
-        border-collapse: collapse; /* Remove any default table spacing */
-}
+            width: 100%;
+            text-align: right;
+            font-family: monospace;
+            border-collapse: collapse;
+        }
 
         .math-table .number {
-        padding-right: 10px; /* Add some padding to the right of numbers */
-}
+            padding-right: 10px;
+        }
 
         .math-table .operator {
-        padding-left: 10px; /* Add some padding to the left of operators */
-}
-        #timer {
-            font-size: 24px;
-            margin: 10px;
+            padding-left: 10px;
         }
-        #correctAnswersCounter, #stopwatch {
+
+        #timer {
+            font-size: 80px;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            transform: translateX(0);
+            z-index: 99;
+        }
+
+        #stopwatch {
             position: fixed;
             bottom: 10px;
-            font-size: 20px;
         }
+
         #correctAnswersCounter {
             left: 10px;
+            font-size: 30px;
+            font-weight: bold;
+            position: fixed;
+            top: 5px;
+            color: #d35400; /* Ensure the text is visible */
         }
+
         #stopwatch {
             right: 10px;
+            font-size: 20px;
+            font-weight: bold;
         }
-        
+
+        #gameInfo {
+            font-family: 'Inter', sans-serif;
+            display: none;
+            color: #d35400;
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            z-index: 100;
+            font-weight: bold;
+        }
+
+        #submitAnswer, #skipButton {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px #2980b9; /* Add a box shadow for consistency */
+        }
+
+        #skipButton {
+            display: none;
+        }
+
+        #mode, input[type="radio"], #numQuestions {
+            padding: 10px;
+            margin: 10px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #timer, #correctAnswersCounter, #stopwatch {
+            color: #d35400;
+        }
+        button {
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease;
+}
+
+button:hover {
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+        #startButton {
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            background-color: #27ae60;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px #16a085;
+            cursor: pointer;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        #startButton:hover {
+            background-color: #2ecc71;
+            box-shadow: 0 6px #27ae60;
+        }
+
+        #startButton:active {
+            background-color: #27ae60;
+            box-shadow: 0 2px #16a085;
+            transform: translateY(2px);
+        }
+
+        #toggleDirectionButton {
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            background-color: #3498db;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px #2980b9;
+            cursor: pointer;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            margin-top: 10px;
+        }
+
+        #toggleDirectionButton:hover {
+            background-color: #5dade2;
+            box-shadow: 0 6px #3498db;
+        }
+
+        #toggleDirectionButton:active {
+            background-color: #3498db;
+            box-shadow: 0 2px #2980b9;
+            transform: translateY(2px);
+        }
+
+        #submitAnswer:focus, #startButton:focus, #toggleDirectionButton:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.5);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 20%;
+            height: calc(100% - 100px);
+            padding-top: 50px;
+            padding-bottom: 50px;
+        }
+
+        .modal-content {
+            margin: 0;
+            padding: 20px;
+            height: 100%;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #closeModal {
+            display: block;
+            width: auto;
+            padding: 10px 18px;
+            background-color: #f44336;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px #2980b9;
+        }
+
+        .waiting-list {
+            max-height: calc(100% - 80px);
+            overflow-y: auto;
+        }
+
+        #countdown {
+            font-size: 2em;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
         @media screen and (min-width: 768px) {
             .vertical-format {
                 width: 50%;
                 margin: 20px auto;
             }
         }
+
+        @media only screen and (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            #question {
+                font-size: 20px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            input[type="text"], select, #answer {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            #submitAnswer, #startButton, #toggleDirectionButton {
+                width: 100%;
+            }
+        }
+
+        .correct {
+    color: green;
+}
+
+.incorrect {
+    color: red;
+}
+
+.skipped {
+    color: blue;
+}
+
+        .results-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            width: 80%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            display: none; /* Ensure the modal is hidden by default */
+        }
+
+        .results-modal.active {
+            display: block;
+        }
+
+        .results-modal-header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+            padding-bottom: 10px;
+        }
+
+        .results-modal-title {
+            margin: 0;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .results-modal-body {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .results-content {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .results-content li {
+            padding: 10px;
+            border-bottom: 1px solid #eaeaea;
+            font-weight: bold;
+        }
+
+        .results-content li:last-child {
+            border-bottom: none;
+        }
+
+        .results-winner {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .close-results-modal {
+            cursor: pointer;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .results-modal.fullscreen-blitz {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    padding: 40px !important;
+    overflow-y: auto !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    background-color: #fff;
+    z-index: 10000;
+    font-size: 70%;
+}
+
+.results-modal.fullscreen-blitz .results-modal-body {
+    flex-grow: 1;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 120px) !important;
+    padding-right: 10px; /* optional: for visible scrollbar spacing */
+}
+
+.results-modal.fullscreen-blitz .results-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.results-modal.fullscreen-blitz .results-modal-body::-webkit-scrollbar-thumb {
+    background-color: #bbb;
+    border-radius: 4px;
+}
+
+        @media (max-width: 600px) {
+            .results-modal {
+                width: 90%;
+                padding: 15px;
+            }
+        }
+
+        .stats-modal {
+            display: none;
+            position: fixed;
+            z-index: 11;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .stats-modal .modal-content {
+            background-color: #000;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            border-radius: 10px;
+            color: #ffd700;
+        }
+
+        .stats-modal .modal-content h2 {
+            color: #ffd700;
+        }
+
+        .close-stats-modal {
+            cursor: pointer;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #ffd700;
+        }
+
+        .stats-modal .modal-content p {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 0.5em;
+            line-height: 1.4;
+        }
+
+        /* Styling for the formatting options toggle button */
+        #toggleFormattingOptions {
+            margin-top: 20px;
+            background-color: #3498db;
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px #2980b9;
+            transition: all 0.2s ease;
+        }
+
+        #toggleFormattingOptions:hover {
+            background-color: #2980b9;
+            box-shadow: 0 6px #3498db;
+        }
+
+        #toggleFormattingOptions:active {
+            background-color: #3498db;
+            box-shadow: 0 2px #2980b9;
+            transform: translateY(2px);
+        }
+        #intermissionInfo {
+    display: none;
+    text-align: center;
+    margin-top: 20px;
+    color: #2c3e50;
+    font-size: 2em;
+    font-weight: bold;
+}
+
+#intermissionCountdown,
+#nextCategories {
+    margin: 10px 0;
+}
+
+.blitz-randomize-btn {
+    background-color: #3498db;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 12px 18px;
+    margin: 10px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.blitz-randomize-btn:hover {
+    background-color: #2d80b3;
+    transform: scale(1.05);
+}
+
+.mini-match-table {
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+.mini-match-table th, .mini-match-table td {
+    border: 1px solid #333;
+    padding: 5px 10px;
+    text-align: center;
+}
+
+#intermissionSummary {
+    display: flex;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: auto;
+    justify-content: flex-start;
+    align-items: flex-start;
+    background: transparent;
+    padding: 12px;
+    z-index: 9999;
+    text-align: left;
+    font-family: Cardillac, sans-serif;
+    color: #333;
+}
+
+#intermissionContent {
+    display: block;
+    text-align: center;
+    margin: 0 auto;
+}
+
+#intermissionContent h4 {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+#intermissionContent table.mini-match-table {
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-size: 1.4em;
+    background: none;
+}
+
+#intermissionContent table.mini-match-table th,
+#intermissionContent table.mini-match-table td {
+    border: 1px solid #666;
+    padding: 6px 16px;
+    background: none;
+    color: #111;
+    font-weight: bold;
+    text-align: center;
+}
+
+body.blitz-results-active {
+    min-height: 100vh !important;
+    height: auto !important;
+    overflow-y: auto !important;
+    display: block !important;
+}
+
+input[type="text"], input[type="number"], select {
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus, select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+    outline: none;
+}
+select, input[type="text"], input[type="number"] {
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    font-size: 16px;
+    background-color: #f9f9f9;
+    transition: all 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+select:focus, input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.3);
+}
+
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Calculation League</h1>
-        <div>
+        <div id="waitingPlayersModal" class="modal">
+            <div class="modal-content">
+                <h2>Players Waiting</h2>
+                <div id="waitingPlayersList" class="waiting-list">
+                    <!-- Dynamic waiting player info will be injected here -->
+                </div>
+                <button id="closeModal">Close</button>
+            </div>
+        </div>
+        <div id="notification-bar">Waiting in room</div>
+        <div id="connectionStatus" style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ff4d4f;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-weight: bold;
+    z-index: 9999;
+    font-size: 16px;
+">
+    You are offline. Please reconnect to continue.
+</div>
+
+        <div id="gameSetup">
+            <div>
                 <label for="roomName">Room Name:</label>
                 <input type="text" id="roomName" placeholder="Enter room name">
             </div>
@@ -77,207 +689,712 @@
                 <label for="playerName">Player Name:</label>
                 <input type="text" id="playerName" placeholder="Enter your name">
             </div>
-        <div>
-            <label for="mode">Select Mode:</label>
-            <select id="mode">
-                <option value="qualification">Qualification</option>
-                <option value="regularSeason">Regular Season</option>
-                <option value="playoffs">Playoffs</option>
-                <option value="finals">Finals</option>
-            </select>
-        </div>
-        <div>
-                <input type="radio" id="numQuestionsOption" name="gameMode" value="numQuestions" checked>
-                <label for="numQuestionsOption">Number of Questions:</label>
-                <input type="number" id="numQuestions" min="1" max="100" value="1" disabled>
+
+            <div style="display: flex; justify-content: center; align-items: baseline; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: baseline; gap: 6px; padding-top: 2px;">
+                    <label for="themePresetDropdown" style="margin: 0; font-weight: bold;">Theme:</label>
+                    <select id="themePresetDropdown" style="margin: 0; padding-top: 8px; padding-bottom: 8px;">
+                        <option value="">Select a Color Theme</option>
+                        <option value="terminal">Terminal</option>
+                        <option value="dangerZone">Danger Zone</option>
+                        <option value="arcticBlast">Arctic Blast</option>
+                        <option value="purpleVoltage">Purple Voltage</option>
+                        <option value="opticWhite">Optic White (Light)</option>
+                        <option value="retroSun">Retro Sun (Light)</option>
+                        <option value="midnight">Midnight</option>
+                        <option value="forest">Forest</option>
+                        <option value="ocean">Ocean</option>
+                        <option value="slate">Slate</option>
+                        <option value="desert">Desert</option>
+                        <option value="twilight">Twilight</option>
+                        <option value="charcoal">Charcoal</option>
+                        <option value="sunset">Sunset</option>
+                        <option value="midcentury">Midcentury</option>
+                        <option value="pastel">Pastel (Light)</option>
+                        <option value="warmlight">Warm Light</option>
+                        <option value="ice">Ice (Light)</option>
+                        <option value="candyPop">Candy Pop (Light)</option>
+                        <option value="technoGlow">Techno Glow</option>
+                        <option value="jungleBeat">Jungle Beat</option>
+                        <option value="citrusBlast">Citrus Blast (Light)</option>
+                        <option value="bubblegum">Bubblegum (Light)</option>
+                        <option value="peacock">Peacock</option>
+                        <option value="rocketFuel">Rocket Fuel</option>
+                        <option value="aurora">Aurora</option>
+                        <option value="lemonade">Lemonade (Light)</option>
+                        <option value="coralReef">Coral Reef (Light)</option>
+                        <option value="vaporwave">Vaporwave</option>
+                        <option value="cherrySoda">Cherry Soda</option>
+
+                    </select>
+                </div>
+                <button id="toggleFormattingOptions">Show Formatting Options &#9662;</button>
             </div>
+                        
+            <!-- Formatting Options Container -->
+            <div id="formattingOptions" style="display: none; margin-top: 20px;">
+                <label for="bgColorPicker">Background Color:</label>
+                <input type="color" id="bgColorPicker" name="bgColorPicker" value="#A0D2EB">
+
+                <label for="textColorPicker">Text Color:</label>
+                <input type="color" id="textColorPicker" name="textColorPicker" value="#2c3e50">
+
+                <label for="infoColorPicker">Info Color:</label>
+                <input type="color" id="infoColorPicker" name="infoColorPicker" value="#d35400">
+
+                <label for="intermissionColorPicker">Intermission Color:</label>
+                <input type="color" id="intermissionColorPicker" name="intermissionColorPicker" value="#2c3e50">
+
+                <div class="input-row">
+                    <div>
+                        <label for="textFontSize">Text Font Size:</label>
+                        <input type="number" id="textFontSize" placeholder="Enter font size" value="30">
+                    </div>
+                    <div>
+                        <label for="textLetterSpacing">Text Letter Spacing:</label>
+                        <input type="number" id="textLetterSpacing" placeholder="Enter letter spacing" value="4">
+                    </div>
+                    <div>
+                        <label for="textFontWeight">Text Font Weight:</label>
+                        <input type="number" id="textFontWeight" placeholder="Enter font weight" value="900">
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div>
+                        <label for="infoFontSize">Info Font Size:</label>
+                        <input type="number" id="infoFontSize" placeholder="Enter font size" value="40">
+                    </div>
+                    <div>
+                        <label for="infoLetterSpacing">Info Letter Spacing:</label>
+                        <input type="number" id="infoLetterSpacing" placeholder="Enter letter spacing" value="2">
+                    </div>
+                    <div>
+                        <label for="infoFontWeight">Info Font Weight:</label>
+                        <input type="number" id="infoFontWeight" placeholder="Enter font weight" value="1200">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div>
+                        <label for="timerFontSize">Timer Font Size:</label>
+                        <input type="number" id="timerFontSize" placeholder="Enter font size" value="120">
+                    </div>
+                    <div>
+                        <label for="timerLetterSpacing">Timer Letter Spacing:</label>
+                        <input type="number" id="timerLetterSpacing" placeholder="Enter letter spacing" value="2">
+                    </div>
+                    <div>
+                        <label for="timerFontWeight">Timer Font Weight:</label>
+                        <input type="number" id="timerFontWeight" placeholder="Enter font weight" value="1200">
+                    </div>
+                </div>
+            </div>
+
+            <div class="dropdown-container">
+                <div>
+                    <label for="leagueMode">League Mode:</label>
+                    <select id="leagueMode">
+                        <option value="">--Select Mode--</option>
+                        <option value="qualification">Qualification</option>
+                        <option value="regularSeason">Regular Season</option>
+                        <option value="playoffs">Playoffs</option>
+                        <option value="finals">Finals</option>
+                        <option value="blitzRegularSeason">blitzRegularSeason</option>
+                        <option value="blitzPlayoffs">blitzPlayoffs</option>
+                        <option value="blitzFinals">blitzFinals</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="taskMode">Task Mode:</label>
+                    <select id="taskMode">
+                        <option value="">--Select Task--</option>
+                        <option value="additionTenDigit">Addition</option>
+                        <option value="multiplication">Multiplication</option>
+                        <option value="division">Division</option>
+                        <option value="modulus">Modulus</option>
+                        <option value="squareRoots">Square Roots</option>
+                        <option value="nthRoots">Nth Roots</option>
+                        <option value="factorization">Factorization</option>
+                        <option value="sumOfSquares">Sum of Squares</option>
+                        <option value="decimalRoots">Decimal Roots</option>
+                        <option value="decimalExponents">Decimal Exponents</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="taskLevel">Task Level:</label>
+                    <select id="taskLevel">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+            </div>
+
             <div>
-                <input type="radio" id="leagueMatchOption" name="gameMode" value="leagueMatch">
+                <input type="radio" id="numQuestionsOption" name="gameMode" value="numQuestions">
+                <label for="numQuestionsOption">Number of Questions:</label>
+                <input type="number" id="numQuestions" min="1" max="100" value="1">
+            
+                <input type="radio" id="leagueMatchOption" name="gameMode" value="leagueMatch" checked>
                 <label for="leagueMatchOption">League Match</label>
             </div>
-        
-        <button id="startButton">Start</button>
-        <button id="toggleDirectionButton">Toggle Text Direction</button>
+            <div id="customFormatContainer" style="display:none;">
+                <label for="customFormatQuestionPercentage">Custom Format Question Percentage:</label>
+                <input type="number" id="customFormatQuestionPercentage" min="0" max="100" value="10">
+            </div>
+            
+            <button id="startButton">Start</button>
+        </div>
+        <div id="intermissionSummary">
+            <div id="intermissionContent"></div>
+          </div>              
+        <div id="countdown"></div>
+        <div id="intermissionInfo">
+            <div id="intermissionCountdown"></div>
+            <div id="nextCategories"></div>
+        </div>
+        <div id="randomizeButtons" style="display: none; margin-top: 20px; text-align: center;">
+            <button class="blitz-randomize-btn" onclick="handleRandomizeClick('standard')">Randomize Standard</button>
+            <button class="blitz-randomize-btn" onclick="handleRandomizeClick('complex')">Randomize Complex</button>
+            <button class="blitz-randomize-btn" onclick="handleRandomizeClick('random')">Randomize Multioperation</button>
+            <button class="blitz-randomize-btn" onclick="handleRandomizeClick('all')">Randomize All</button>
+        </div>        
+        <div id="updatedFormatsDisplay" style="display:none; margin-top: 10px;"></div>       
+        <div id="blitzFormatDisplay" style="margin-top: 10px;"></div>                             
         <div id="questionContainer">
             <div id="question"></div>
-            <input type="number" id="answer">
+            <button id="toggleDirectionButton">Toggle Text Direction</button>
+            <button id="toggleSign">+/-</button>
+            <input type="text" id="answer" placeholder="Your Answer">
             <button id="submitAnswer">Submit Answer</button>
+            <button id="skipButton">Skip</button>
         </div>
+        
         <div id="correctAnswersCounter">Correct Answers: 0</div>
         <div id="stopwatch">Elapsed Time: 0s</div>
         <div id="timer">30</div>
         <div id="results"></div>
+        <div id="gameInfo" style="text-align: center; margin-top: 20px;"></div>
+    </div>
+    <div id="resultsModal" class="results-modal">
+        <div class="results-modal-header">
+            <h2 class="results-modal-title">Match Results</h2>
+            <button id="closeResultsModal" class="close-results-modal">&times;</button>
+        </div>
+        <div class="results-modal-body">
+            <div id="resultsContent"><!-- Results will be injected here --></div>
+        </div>
+    </div>
+    <div id="playerStatsModal" class="stats-modal">
+        <div class="modal-content">
+            <span id="closePlayerStatsModal" class="close">&times;</span>
+            <h2>Player Stats</h2>
+            <div id="playerStatsContent"><!-- Player stats will be injected here --></div>
+        </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-    window.onload = () => {
-        const storedPlayerName = localStorage.getItem('playerName');
-        const storedRoomName = localStorage.getItem('roomName');
-        if (storedPlayerName && storedRoomName) {
-            // Prefill the playerName and roomName fields
-            document.getElementById('playerName').value = storedPlayerName;
-            document.getElementById('roomName').value = storedRoomName;
-        }
-    };
+        window.onload = () => {
+            const storedPlayerName = localStorage.getItem('playerName');
+            const storedRoomName = localStorage.getItem('roomName');
+            if (storedPlayerName && storedRoomName) {
+                document.getElementById('playerName').value = storedPlayerName;
+                document.getElementById('roomName').value = storedRoomName;
+            }
+            const storedBgColor = localStorage.getItem('bgColor');
+    const storedTextColor = localStorage.getItem('textColor');
+    const storedInfoColor = localStorage.getItem('infoColor');
+    const storedIntermissionColor = localStorage.getItem('intermissionColor');
+    const storedTextFontSize = localStorage.getItem('textFontSize');
+    const storedTextLetterSpacing = localStorage.getItem('textLetterSpacing');
+    const storedTextFontWeight = localStorage.getItem('textFontWeight');
+    const storedInfoFontSize = localStorage.getItem('infoFontSize');
+    const storedInfoLetterSpacing = localStorage.getItem('infoLetterSpacing');
+    const storedInfoFontWeight = localStorage.getItem('infoFontWeight');
+    const storedTimerFontSize = localStorage.getItem('timerFontSize');
+    const storedTimerLetterSpacing = localStorage.getItem('timerLetterSpacing');
+    const storedTimerFontWeight = localStorage.getItem('timerFontWeight');
+    const storedLeagueMode = localStorage.getItem('leagueMode');
+    const storedTaskMode = localStorage.getItem('taskMode');
+    const storedTaskLevel = localStorage.getItem('taskLevel');
+    const storedNumQuestions = localStorage.getItem('numQuestions');
+    const storedCustomFormatPercentage = localStorage.getItem('customFormatQuestionPercentage');
 
+    // Restore values in the form
+    if (storedBgColor) document.getElementById('bgColorPicker').value = storedBgColor;
+    if (storedTextColor) document.getElementById('textColorPicker').value = storedTextColor;
+    if (storedInfoColor) document.getElementById('infoColorPicker').value = storedInfoColor;
+    if (storedIntermissionColor) document.getElementById('intermissionColorPicker').value = storedIntermissionColor;
+    if (storedTextFontSize) document.getElementById('textFontSize').value = storedTextFontSize;
+    if (storedTextLetterSpacing) document.getElementById('textLetterSpacing').value = storedTextLetterSpacing;
+    if (storedTextFontWeight) document.getElementById('textFontWeight').value = storedTextFontWeight;
+    if (storedInfoFontSize) document.getElementById('infoFontSize').value = storedInfoFontSize;
+    if (storedInfoLetterSpacing) document.getElementById('infoLetterSpacing').value = storedInfoLetterSpacing;
+    if (storedInfoFontWeight) document.getElementById('infoFontWeight').value = storedInfoFontWeight;
+    if (storedTimerFontSize) document.getElementById('timerFontSize').value = storedTimerFontSize;
+    if (storedTimerLetterSpacing) document.getElementById('timerLetterSpacing').value = storedTimerLetterSpacing;
+    if (storedTimerFontWeight) document.getElementById('timerFontWeight').value = storedTimerFontWeight;
+    if (storedLeagueMode) document.getElementById('leagueMode').value = storedLeagueMode;
+    if (storedTaskMode) document.getElementById('taskMode').value = storedTaskMode;
+    if (storedTaskLevel) document.getElementById('taskLevel').value = storedTaskLevel;
+    if (storedNumQuestions) document.getElementById('numQuestions').value = storedNumQuestions;
+    if (storedCustomFormatPercentage) document.getElementById('customFormatQuestionPercentage').value = storedCustomFormatPercentage;
+
+    document.getElementById('numQuestionsOption').checked = true;
+    document.getElementById('customFormatContainer').style.display = 'block'; 
+    const skipButton = document.getElementById('skipButton');
+    const leagueMatchRadio = document.getElementById('leagueMatchOption');
+    const numQuestionsRadio = document.getElementById('numQuestionsOption');
+    
+    skipButton.style.display = 'inline';
+
+    leagueMatchRadio.addEventListener('change', () => {
+        if (leagueMatchRadio.checked) {
+            skipButton.style.display = 'none';
+        }
+    });
+
+    numQuestionsRadio.addEventListener('change', () => {
+        if (numQuestionsRadio.checked) {
+            skipButton.style.display = 'inline';
+        }
+    }); 
+};
+
+function lightenColor(hex, percent) {
+    const num = parseInt(hex.slice(1), 16),
+          amt = Math.round(2.55 * percent),
+          R = (num >> 16) + amt,
+          G = (num >> 8 & 0x00FF) + amt,
+          B = (num & 0x0000FF) + amt;
+
+    return `#${(
+        0x1000000 +
+        (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+        (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+        (B < 255 ? (B < 1 ? 0 : B) : 255)
+    ).toString(16).slice(1)}`;
+}
+
+function showStatus(message) {
+    const statusDiv = document.getElementById("connectionStatus");
+    if (statusDiv) {
+        statusDiv.innerText = message || "Disconnected.";
+        statusDiv.style.display = "block";
+    }
+}
+
+function hideStatus() {
+    const statusDiv = document.getElementById("connectionStatus");
+    if (statusDiv) {
+        statusDiv.style.display = "none";
+    }
+}
+
+
+function showRandomizeButtons() {
+    document.getElementById('randomizeButtons').style.display = 'block';
+}
+
+function hideRandomizeButtons() {
+    document.getElementById('randomizeButtons').style.display = 'none';
+}
+
+function handleRandomizeClick(type) {
+    const room = document.getElementById('roomName').value;  // FIXED LINE
+    console.log(`[CLIENT] Sending to server: type=${type}, roomName=${room}`);
+    socket.emit('requestRandomize', { roomName: room, type });  // FIXED LINE
+    hideRandomizeButtons();
+}
         const socket = io();
-        socket.on('connect', () => {
-        console.log('Connected to server');
-        const playerName = document.getElementById('playerName').value;
-        players[socket.id] = playerName;
+
+        socket.on('disconnect', () => {
+    showStatus("You are offline. Please reconnect to continue.");
 });
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            const playerName = document.getElementById('playerName').value;
+            players[socket.id] = playerName;
+            hideStatus();
+        });
         let currentQuestion = {};
         let questionTimer;
         let elapsedTimeTimer;
         let startTime;
         let players = {};
-        let currentRoom = ''; // Add a global variable to store the current room name
+        let currentRoom = '';
         let gameEnded = false;
         let isRejoining = false;
 
         socket.on('playerWaiting', (message) => {
-            alert(message);
-});
-        
-        socket.on('joinRoom', (roomName, playerName) => {
-        players[socket.id] = playerName;
+            const modal = document.getElementById('waitingPlayersModal');
+            const waitingPlayersList = document.getElementById('waitingPlayersList');
+            const players = message.split('\n').map(info => `<p>${info}</p>`).join('');
+            waitingPlayersList.innerHTML = players;
+            modal.style.display = 'block';
         });
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('waitingPlayersModal').style.display = 'none';
+        });
+
+        socket.on('joinRoom', (roomName, playerName) => {
+            players[socket.id] = playerName;
+        });
+        document.getElementById('notification-bar').style.display = 'none';
 
         socket.on('waitingForPlayer', (message) => {
-        alert(message); // Or use any other method to display the message
-    });
-
-        document.querySelectorAll('input[name="gameMode"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            if(this.value === 'numQuestions') {
-                document.getElementById('numQuestions').disabled = false;
-            } else {
-                document.getElementById('numQuestions').disabled = true;
-            }
+            const notificationBar = document.getElementById('notification-bar');
+            notificationBar.textContent = message;
+            notificationBar.style.display = 'block';
+            setTimeout(() => {
+                notificationBar.style.display = 'none';
+            }, 50000);
         });
+
+// Handle game mode change and display custom format input when necessary
+document.querySelectorAll('input[name="gameMode"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const leagueModeValue = document.getElementById('leagueMode').value;
+        const isNumQuestions = this.value === 'numQuestions';
+        
+        // Display custom format container only if a league mode is selected and "number of questions" is chosen
+        if (leagueModeValue && isNumQuestions) {
+            document.getElementById('customFormatContainer').style.display = 'block';
+        } else {
+            document.getElementById('customFormatContainer').style.display = 'none';
+        }
+        
+        // Enable or disable numQuestions input based on the selected game mode
+        document.getElementById('numQuestions').disabled = !isNumQuestions;
     });
-
-    document.getElementById('startButton').addEventListener('click', () => {
-        const roomName = document.getElementById('roomName').value;
-        const playerName = document.getElementById('playerName').value;
-        players[socket.id] = playerName;
-
-        localStorage.setItem('playerName', playerName);
-        localStorage.setItem('roomName', roomName);
-
-        const selectedMode = document.getElementById('mode').value;
-        const isLeagueMatch = document.getElementById('leagueMatchOption').checked;
-        let numQuestions = 1;
-
-    if (isLeagueMatch) {
-        numQuestions = 500; // Set a large number for league matches
-    } else {
-        numQuestions = parseInt(document.getElementById('numQuestions').value, 10);
-    }
-
-    const gameSettings = {
-        selectedMode,
-        numQuestions,
-        isLeagueMatch
-    };
-    
-    socket.emit('joinRoom', roomName, playerName);
-    currentRoom = roomName; // Update currentRoom when the player joins a room
-    
-    socket.emit('startGame', roomName, { selectedMode, numQuestions, isLeagueMatch });
-    
 });
 
-socket.on('gameStarted', (gameState) => {
-    if (gameState.startTime) {
-        startElapsedTimeTimer(gameState.startTime);
+// Handle league mode change
+document.getElementById('leagueMode').addEventListener('change', () => {
+    const leagueModeValue = document.getElementById('leagueMode').value;
+    const taskModeDropdown = document.getElementById('taskMode');
+    const taskLevelDropdown = document.getElementById('taskLevel');
+    const isNumQuestions = document.getElementById('numQuestionsOption').checked;
+    
+    if (leagueModeValue) {
+        taskModeDropdown.disabled = true;
+        taskLevelDropdown.disabled = true;
+
+        // Display custom format container if "number of questions" is selected
+        if (isNumQuestions) {
+            document.getElementById('customFormatContainer').style.display = 'block';
+        }
     } else {
-        console.error("Game started without a valid start time.", gameState);
+        taskModeDropdown.disabled = false;
+        taskLevelDropdown.disabled = false;
+        document.getElementById('customFormatContainer').style.display = 'none';
+    }
+});
+
+// Handle task mode change
+document.getElementById('taskMode').addEventListener('change', () => {
+    const taskModeValue = document.getElementById('taskMode').value;
+    const leagueModeDropdown = document.getElementById('leagueMode');
+
+    if (taskModeValue) {
+        leagueModeDropdown.disabled = true;
+        document.getElementById('customFormatContainer').style.display = 'none';
+    } else {
+        leagueModeDropdown.disabled = false;
+
+        // Check if a league mode is selected and if "number of questions" is chosen
+        const leagueModeValue = document.getElementById('leagueMode').value;
+        const isNumQuestions = document.getElementById('numQuestionsOption').checked;
+
+        if (leagueModeValue && isNumQuestions) {
+            document.getElementById('customFormatContainer').style.display = 'block';
+        }
+    }
+});
+
+        document.getElementById('startButton').addEventListener('click', () => {
+            const roomName = document.getElementById('roomName').value;
+            const playerName = document.getElementById('playerName').value;
+            players[socket.id] = playerName;
+
+            localStorage.setItem('playerName', playerName);
+            localStorage.setItem('roomName', roomName);
+
+            const leagueMode = document.getElementById('leagueMode').value;
+            const taskMode = document.getElementById('taskMode').value;
+            const taskLevel = document.getElementById('taskLevel').value;
+            const selectedMode = leagueMode || taskMode;
+            const isLeagueMatch = document.getElementById('leagueMatchOption').checked;
+            let numQuestions = isLeagueMatch ? 500 : parseInt(document.getElementById('numQuestions').value, 10);
+
+            const isBlitz = leagueMode && leagueMode.startsWith("blitz");
+            const customFormatQuestionPercentage = isBlitz ? 2 / 3 : parseFloat(document.getElementById('customFormatQuestionPercentage').value) / 100; 
+
+            localStorage.setItem('leagueMode', leagueMode);
+    localStorage.setItem('taskMode', taskMode);
+    localStorage.setItem('taskLevel', taskLevel);
+    localStorage.setItem('numQuestions', document.getElementById('numQuestions').value);
+    localStorage.setItem('customFormatQuestionPercentage', document.getElementById('customFormatQuestionPercentage').value);
+
+const bgColor = document.getElementById('bgColorPicker').value;
+const textColor = document.getElementById('textColorPicker').value;
+const infoColor = document.getElementById('infoColorPicker').value;
+const intermissionColor = document.getElementById('intermissionColorPicker').value;
+
+const textFontSize = document.getElementById('textFontSize').value + "px";
+const textLetterSpacing = document.getElementById('textLetterSpacing').value + "px";
+const textFontWeight = document.getElementById('textFontWeight').value;
+
+const infoFontSize = document.getElementById('infoFontSize').value + "px";
+const infoLetterSpacing = document.getElementById('infoLetterSpacing').value + "px";
+const infoFontWeight = document.getElementById('infoFontWeight').value;
+
+const timerFontSize = document.getElementById('timerFontSize').value + "px";
+const timerLetterSpacing = document.getElementById('timerLetterSpacing').value + "px";
+const timerFontWeight = document.getElementById('timerFontWeight').value;
+
+localStorage.setItem('bgColor', bgColor);
+    localStorage.setItem('textColor', textColor);
+    localStorage.setItem('infoColor', infoColor);
+    localStorage.setItem('intermissionColor', intermissionColor);
+    localStorage.setItem('textFontSize', document.getElementById('textFontSize').value);
+    localStorage.setItem('textLetterSpacing', document.getElementById('textLetterSpacing').value);
+    localStorage.setItem('textFontWeight', document.getElementById('textFontWeight').value);
+    localStorage.setItem('infoFontSize', document.getElementById('infoFontSize').value);
+    localStorage.setItem('infoLetterSpacing', document.getElementById('infoLetterSpacing').value);
+    localStorage.setItem('infoFontWeight', document.getElementById('infoFontWeight').value);
+    localStorage.setItem('timerFontSize', document.getElementById('timerFontSize').value);
+    localStorage.setItem('timerLetterSpacing', document.getElementById('timerLetterSpacing').value);
+    localStorage.setItem('timerFontWeight', document.getElementById('timerFontWeight').value);
+
+const gradient = `linear-gradient(to right, ${bgColor}, ${lightenColor(bgColor, 20)})`;
+document.body.style.backgroundImage = gradient;
+document.body.style.backgroundColor = ''; // Remove solid color fallback
+
+document.getElementById('answer').style.backgroundColor = bgColor;
+
+document.querySelector('h1').style.color = textColor;
+document.querySelectorAll('label, input[type="text"], #answer, #question').forEach(element => {
+    element.style.color = textColor;
+    element.style.fontSize = textFontSize;
+    element.style.letterSpacing = textLetterSpacing;
+    element.style.fontWeight = textFontWeight;
+});
+
+document.querySelectorAll('#correctAnswersCounter, #stopwatch, #gameInfo, #notification-bar').forEach(element => {
+    element.style.color = infoColor;
+    element.style.fontSize = infoFontSize;
+    element.style.letterSpacing = infoLetterSpacing;
+    element.style.fontWeight = infoFontWeight;
+
+    document.getElementById('timer').style.fontSize = timerFontSize;
+    document.getElementById('timer').style.letterSpacing = timerLetterSpacing;
+    document.getElementById('timer').style.fontWeight = timerFontWeight;
+});
+document.querySelectorAll('#intermissionInfo, #countdown, #intermissionCountdown, #nextCategories').forEach(element => {
+    element.style.color = intermissionColor;
+});
+
+            const gameSettings = {
+                selectedMode,
+                numQuestions,
+                isLeagueMatch,
+                taskLevel,
+                customFormatQuestionPercentage,
+                isBlitz
+            };
+
+            socket.emit('joinRoom', roomName, playerName);
+            currentRoom = roomName;
+
+            // Directly start the game for single-player mode
+            socket.emit('startGame', roomName, gameSettings);
+
+            document.getElementById('gameSetup').style.display = 'none';
+
+            const gameInfoElement = document.getElementById('gameInfo');
+            const displayMode = leagueMode ? leagueMode.charAt(0).toUpperCase() + leagueMode.slice(1) : `${taskMode.charAt(0).toUpperCase() + taskMode.slice(1)}Level${taskLevel}`;
+            gameInfoElement.textContent = `${displayMode} - ${isLeagueMatch ? 'League Match' : numQuestions + ' Questions'}`;
+            gameInfoElement.style.display = 'block';
+        });
+
+        document.getElementById('numQuestionsOption').addEventListener('change', () => {
+    document.getElementById('customFormatContainer').style.display = 'block';
+    document.getElementById('skipButton').style.display = 'inline'; // Show skip button for "Number of Questions"
+});
+
+document.getElementById('leagueMatchOption').addEventListener('change', () => {
+    document.getElementById('customFormatContainer').style.display = 'none';
+    document.getElementById('skipButton').style.display = 'none'; // Hide skip button for "League Match"
+});
+
+        socket.on('countdown', (count) => {
+            const countdownElement = document.getElementById('countdown');
+            countdownElement.textContent = count > 0 ? `Match starts in... ${count}` : 'Game starts now!';
+        });
+
+        socket.on('gameStarted', (gameState) => {
+            document.getElementById('waitingPlayersModal').style.display = 'none';
+            document.getElementById('notification-bar').style.display = 'none';
+
+            if (gameState.startTime) {
+                startElapsedTimeTimer(gameState.startTime);
+            } else {
+                console.error("Game started without a valid start time.", gameState);
+            }
+
+            document.getElementById('countdown').style.display = 'none';
+        });
+
+        socket.on('updateSubmitButton', ({ attempts, maxAttempts }) => {
+    const submitButton = document.getElementById('submitAnswer');
+
+    if (attempts === 0) {
+        submitButton.style.backgroundColor = ''; // Default color
+        submitButton.disabled = false;           // Enable button
+    } else if (attempts === maxAttempts - 1) {
+        submitButton.style.backgroundColor = 'yellow'; // Warning state
+    } else if (attempts >= maxAttempts) {
+        submitButton.style.backgroundColor = 'red'; // Disable after max attempts
+        submitButton.disabled = true;
     }
 });
 
 socket.on('newQuestion', (question) => {
-    console.log(`New question received for player: ${players[socket.id]}: ${question.text}`);
+    if (gameEnded) return;
+    console.log(`New question received: ${question.text}`);
     currentQuestion = question;
     displayQuestion(question);
-    startQuestionTimer(); // Reset the timer for the new question
-});
-document.getElementById('answer').addEventListener('keypress', function(event) {
-        if (event.key === 'Enter') {
-            submitAnswer();
-            event.preventDefault(); // Prevent the default action (form submission)
-        }
-    });
-
-    let isRightToLeft = false;
-
-    socket.on('playerRejoined', (playerName) => {
-    console.log(`${playerName} has rejoined the room`);
-    isRejoining = true;
-    if (playerName === document.getElementById('playerName').value) {
-        restoreGameStateForRejoiningPlayer();
-    }
-});
-
-function restoreGameStateForRejoiningPlayer() {
-    if (isRejoining) { // Check the flag before requesting game state
-        const roomName = document.getElementById('roomName').value;
-        const playerName = document.getElementById('playerName').value;
-        console.log(`Requesting current game state for player: ${playerName} in room: ${roomName}`);
-        socket.emit('requestCurrentGameState', roomName, playerName);
-        isRejoining = false; // Reset the flag after requesting game state
-    }
-}
-
-socket.on('currentGameState', (gameState) => {
-    console.log(`Received currentGameState for ${document.getElementById('playerName').value}:`, gameState);
-    if (gameState) {
-        console.log(`Updating UI with the received game state for ${document.getElementById('playerName').value}`);
-        displayQuestion(gameState.nextQuestion);
-        updateScores(gameState.scores);
-        
-        // The crucial change is here: When we receive the gameState, we need to check if the game has already started.
-        // If it has, and if a startTime is provided, we start the elapsed time timer with it.
-        if (gameState.gameStarted && typeof gameState.startTime === 'number') {
-            console.log(`Received startTime: ${gameState.startTime}`);
-            startElapsedTimeTimer(gameState.startTime);
-        } else {
-            console.log("Invalid or missing startTime in game state.", gameState);
-        }
-
-        setTimerForNextQuestion(gameState.timeLeftForNextQuestion);
-        document.getElementById('questionContainer').style.display = 'block';
-        document.getElementById('answer').focus();
-    } else {
-        console.log(`Game state is undefined or null for ${document.getElementById('playerName').value}`);
-    }
-});
-
-
-
-function toggleTextDirection() {
-    isRightToLeft = !isRightToLeft;
+    const submitButton = document.getElementById('submitAnswer');
+    submitButton.style.backgroundColor = '';  // Reset to default color
+    submitButton.disabled = false;           // Ensure button is enabled
     const answerInput = document.getElementById('answer');
-    answerInput.style.direction = isRightToLeft ? 'rtl' : 'ltr';
-    answerInput.focus(); // Auto-focus on the answer box after toggling
-}
+    answerInput.value = '';
+    answerInput.focus();
+    startQuestionTimer(); // Restart the question timer
+});
 
-document.getElementById('toggleDirectionButton').addEventListener('click', toggleTextDirection);
+        document.getElementById('answer').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                submitAnswer();
+                event.preventDefault();
+            }
+        });
+
+        let isRightToLeft = false;
+
+        socket.on('playerRejoined', (playerName) => {
+            console.log(`${playerName} has rejoined the room`);
+            isRejoining = true;
+            if (playerName === document.getElementById('playerName').value) {
+                restoreGameStateForRejoiningPlayer();
+            }
+        });
+
+        function restoreGameStateForRejoiningPlayer() {
+            if (isRejoining) {
+                const roomName = document.getElementById('roomName').value;
+                const playerName = document.getElementById('playerName').value;
+                console.log(`Requesting current game state for player: ${playerName} in room: ${roomName}`);
+                socket.emit('requestCurrentGameState', roomName, playerName);
+                isRejoining = false;
+            }
+        }
+
+        socket.on('currentGameState', (gameState) => {
+            console.log(`Received currentGameState for ${document.getElementById('playerName').value}:`, gameState);
+            if (gameState) {
+                displayQuestion(gameState.nextQuestion);
+                updateScores(gameState.scores);
+                
+                if (gameState.gameStarted && typeof gameState.startTime === 'number') {
+                    startElapsedTimeTimer(gameState.startTime);
+                } else {
+                    console.log("Invalid or missing startTime in game state.", gameState);
+                }
+
+                setTimerForNextQuestion(gameState.timeLeftForNextQuestion);
+                document.getElementById('questionContainer').style.display = 'block';
+                document.getElementById('answer').focus();
+            } else {
+                console.log(`Game state is undefined or null for ${document.getElementById('playerName').value}`);
+            }
+        });
+
+        socket.on('enableSkipForOneQuestion', (playerName) => {
+    if (playerName === document.getElementById('playerName').value) {
+        console.log(`Skip button enabled for one question for player: ${playerName}`);
+        const skipButton = document.getElementById('skipButton');
+        skipButton.style.display = 'inline'; // Show the skip button
+
+        socket.once('newQuestion', () => {
+            skipButton.style.display = 'none';
+        });
+    }
+});
+
+
+        function toggleTextDirection() {
+            isRightToLeft = !isRightToLeft;
+            const answerInput = document.getElementById('answer');
+            const toggleDirectionButton = document.getElementById('toggleDirectionButton');
+
+            answerInput.style.direction = isRightToLeft ? 'rtl' : 'ltr';
+            answerInput.focus();
+
+            if (isRightToLeft) {
+        toggleDirectionButton.style.backgroundColor = 'red'; // Red when RTL is active
+    } else {
+        toggleDirectionButton.style.backgroundColor = '#3498db'; // Blue when LTR is active
+    }
+        }
+
+        document.getElementById('toggleDirectionButton').addEventListener('click', toggleTextDirection);
+
+        document.addEventListener('keydown', function(event) {
+    if (event.key === 'Shift') {
+        toggleTextDirection();
+    }
+});
 
 document.getElementById('answer').addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
         submitAnswer();
-        event.preventDefault(); // Prevent the default action (form submission)
-    } else if (isRightToLeft && event.key.length === 1) {
-        event.preventDefault(); // Prevent the default input behavior
-        this.value = event.key + this.value;
+        event.preventDefault();
+    } else if (isRightToLeft && event.key === 'Backspace') {
+        event.preventDefault();
+        this.value = this.value.slice(1);  // Remove the leftmost character in RTL
     }
 });
 
-    function formatQuestionVertically(question) {
+document.getElementById('answer').addEventListener('input', function(event) {
+    if (isRightToLeft) {
+        // Ensure that new characters are added to the beginning
+        const cursorPosition = this.selectionStart;
+        if (cursorPosition === this.value.length) {
+            // Moves the latest character to the start of the input in RTL mode
+            this.value = this.value.charAt(this.value.length - 1) + this.value.slice(0, -1);
+        }
+        this.style.direction = 'rtl';
+    } else {
+        this.style.direction = 'ltr';
+    }
+});
+
+
+        function formatQuestionVertically(question) {
     if (typeof question !== 'string') {
         return '';
     }
+
+    // Replace "+-" with just "-" to handle negative numbers correctly
+    question = question.replace(/\+-/g, '-');
+
+    // Continue processing as before
+    question = question.replace(/%/g, 'mod');
 
     if (question.includes('^')) {
         return `<div style="text-align: right; font-family: monospace;">${question}</div>`;
@@ -291,152 +1408,981 @@ document.getElementById('answer').addEventListener('keydown', function(event) {
     let operator = '';
 
     parts.forEach(part => {
-        if (!isNaN(part.trim())) { // If the part is a number
-            let paddedNumber = part.trim().padStart(maxLength, ' '); // Pad the number
+        if (!isNaN(part.trim())) {
+            let paddedNumber = part.trim().padStart(maxLength, ' ');
             tableHTML += `<tr><td class="operator">${operator}</td><td class="number">${paddedNumber}</td></tr>`;
-            operator = ''; // Clear the operator after using it
-        } else { // If the part is an operator or parentheses
-            operator = part; // Save the operator to be used in the next row
+            operator = '';
+        } else {
+            operator = part;
         }
     });
 
-    // Close the table HTML
     tableHTML += '</table>';
 
     return tableHTML;
 }
 
-function submitAnswer() {
-    const answer = parseFloat(document.getElementById('answer').value) || 0;
-    const playerName = players[socket.id];
-    console.log(`Emitting answer. Player: ${playerName}, Answer: ${answer}`); 
-    socket.emit('submitAnswer', currentRoom, answer, playerName);
+        function sanitizeInput(input) {
+            return input.replace(',', '.');
+        }
 
-    console.log(`Submitting answer: ${answer}, Room: ${currentRoom}, Player: ${playerName}`);
-    
-    document.getElementById('answer').value = ''; // Clear the input
-    document.getElementById('answer').focus(); // Focus back on the answer input after submission
-}
+        function submitAnswer() {
+            if (gameEnded) return;
 
+            const rawInput = document.getElementById('answer').value.trim();
+            const playerName = players[socket.id];
+
+            console.log(`[CLIENT] Emitting 'submitAnswer' — Room: ${roomName}, Answer: ${answer}`);
+            socket.emit('submitAnswer', currentRoom, rawInput, playerName);
+
+            console.log(`Submitting answer: ${rawInput}, Room: ${currentRoom}, Player: ${playerName}`);
+
+            document.getElementById('answer').value = '';
+            document.getElementById('answer').focus();
+        }
 
         socket.on('scoreUpdate', (scores) => {
-        updateScores(scores);
-    });
+            updateScores(scores);
+        });
 
-function updateScores(scores) {
-    let scoreDisplayText = 'Scores: ';
+        function updateScores(scores) {
+    let scoreDisplayText = "";
     Object.entries(scores).forEach(([playerName, score]) => {
-        scoreDisplayText += `${playerName}: ${score}, `;
+        scoreDisplayText += `${playerName}: ${score}\n`;
     });
-    document.getElementById('correctAnswersCounter').textContent = scoreDisplayText.slice(0, -2);
+    document.getElementById('correctAnswersCounter').innerText = `Correct Answers:\n${scoreDisplayText.trim()}`;
 }
 
-function updateElapsedTime(elapsedTime) {
-    document.getElementById('stopwatch').textContent = `Elapsed Time: ${elapsedTime}s`;
-    startElapsedTimeTimer(elapsedTime);
-}
 
-function setTimerForNextQuestion(timeLeft) {
-    clearInterval(questionTimer);
-    questionTimer = setInterval(() => {
-        document.getElementById('timer').textContent = timeLeft;
-        if (timeLeft <= 0) {
-            clearInterval(questionTimer);
-            // Handle expiration (e.g., automatically submit answer or move to next question)
-        } else {
-            timeLeft--;
+        function updateElapsedTime(elapsedTime) {
+            document.getElementById('stopwatch').textContent = `Elapsed Time: ${elapsedTime}s`;
+            startElapsedTimeTimer(elapsedTime);
         }
-    }, 1000);
-}
 
-socket.on('endGame', (results) => {
-    if (!gameEnded) {
-        clearInterval(elapsedTimeTimer); // Stop the elapsed time timer
-        displayFinalResults(results);
-        gameEnded = true; // Set the flag to true
-    } else {
+        const skipButton = document.getElementById('skipButton');
+        const numQuestionsRadio = document.getElementById('numQuestionsOption');
+        const leagueMatchRadio = document.getElementById('leagueMatchOption');
+
+        numQuestionsRadio.addEventListener('change', () => {
+            if (numQuestionsRadio.checked) {
+                skipButton.style.display = 'inline';
+            }
+        });
+
+        leagueMatchRadio.addEventListener('change', () => {
+            if (leagueMatchRadio.checked) {
+                skipButton.style.display = 'none';
+            }
+        });
+
+        skipButton.addEventListener('click', () => {
+            const playerName = players[socket.id];
+            socket.emit('timerExpired', currentRoom, playerName); // Skip to next question
+        });
+
+        function setTimerForNextQuestion(timeLeft) {
+            clearInterval(questionTimer);
+            questionTimer = setInterval(() => {
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(questionTimer);
+                    const playerName = players[socket.id];
+                    socket.emit('timerExpired', currentRoom, playerName);
+                } else {
+                    timeLeft--;
+                }
+            }, 1000);
+        }
+
+        socket.on('endGame', (results) => {
+            if (!gameEnded) {
+                clearInterval(elapsedTimeTimer);
+                clearInterval(questionTimer);
+                gameEnded = true;
+                displayFinalResults(results);
+                document.getElementById('questionContainer').style.display = 'none';
+                document.getElementById('submitAnswer').disabled = true;
+            }
+        });
+
+        socket.on('gameOver', (results) => {
+            if (!gameEnded) {
+                clearInterval(elapsedTimeTimer);
+                clearInterval(questionTimer);
+                gameEnded = true;
+
+                displayFinalResults(results);
+                document.getElementById('questionContainer').style.display = 'none';
+                document.getElementById('submitAnswer').disabled = true;
+            }
+        });
+
+        socket.on('startBlitzIntermission', (data) => {
+    const currentPlayerName = document.getElementById('playerName').value;
+    const losingPlayer = data.losingPlayer;
+
+    if (currentPlayerName === losingPlayer) {
+        document.getElementById('randomizeButtons').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('randomizeButtons').style.display = 'none';
+        }, 20000);
     }
 });
 
-function displayFinalResults(results) {
-    let elapsedTime = Math.round((new Date() - startTime) / 1000);
-    let finalResultsMessage = "Final Results:\n";
+socket.on('blitzIntermissionData', ({ matchHistory, players }) => {
+    const container = document.getElementById('intermissionSummary');
+    if (!container) return;
 
-    for (const playerName in results) {
-        if (playerName !== 'winner') {
-            finalResultsMessage += `${playerName}: ${results[playerName]} points\n`;
-        }
-    }
+    const table = document.createElement("table");
+    table.classList.add("mini-match-table");
 
-    finalResultsMessage += `Winner: ${results['winner']}\n`;
-    finalResultsMessage += `Total Elapsed Time: ${elapsedTime} seconds`;
-
-    alert(finalResultsMessage);
-}
-
-    function resetGameState() {
-        gameEnded = false;
-    }
-
-    document.getElementById('startButton').addEventListener('click', () => {
-    isRejoining = false;
-    resetGameState();
+    const cappedMap = {};
+    players.forEach(name => {
+        const capped = name.substring(0, 7);
+        cappedMap[capped] = name;  // safely map truncated name to full
     });
 
-    function displayQuestion(question) {
+    const cappedNames = players.map(name => name.substring(0, 7));
+
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML = "<th>Match</th>" + cappedNames.map(name => {
+    const fullName = cappedMap[name];
+    return `<th title="${fullName}">${name}</th>`;
+}).join('');
+
+    table.appendChild(headerRow);
+
+    matchHistory.forEach((match, i) => {
+        const row = document.createElement("tr");
+        const cells = cappedNames.map(name => {
+            const fullName = cappedMap[name];
+            return `<td>${match[fullName] ?? ''}</td>`;
+        });
+        row.innerHTML = `<td>M${i + 1}</td>` + cells.join('');
+        table.appendChild(row);
+    });
+
+    const contentWrapper = document.createElement("div");
+    const infoColor = document.getElementById('infoColorPicker')?.value || localStorage.getItem('infoColor') || '#d35400';
+contentWrapper.id = "intermissionContent";
+contentWrapper.style.margin = "0 auto"; // center horizontally
+contentWrapper.style.textAlign = "center"; 
+
+contentWrapper.innerHTML = `<h4>Mini-Match Summary</h4>`;
+
+const tableWrapper = document.createElement("div");
+tableWrapper.style.display = "block"; // allow block centering
+tableWrapper.appendChild(table);
+contentWrapper.appendChild(tableWrapper);
+
+table.querySelectorAll('th, td').forEach(element => {
+    element.style.color = infoColor;
+});
+
+
+// Clear previous content and insert new structured content
+container.innerHTML = "";
+container.appendChild(contentWrapper);
+container.style.display = "flex";
+});
+
+        socket.on('results', (results) => {
+    const currentPlayerName = document.getElementById('playerName').value;
+
+if (results.players.length === 2) {
+    const firstPlayer = results.players[0];
+    if (firstPlayer.name !== currentPlayerName) {
+        results.players.reverse();
+    }
+}
+
+    displayFinalResults(results);
+    gameEnded = true;
+    clearInterval(elapsedTimeTimer);
+    clearInterval(questionTimer);
+    document.getElementById('questionContainer').style.display = 'none';
+    document.getElementById('submitAnswer').disabled = true;
+});
+
+function displayFinalResults(results) {
+    const resultsModal = document.getElementById('resultsModal');
+    const resultsContent = document.getElementById('resultsContent');
+    let finalResultsMessage = "<ul class='results-content'>";
+
+    const isBlitzMode = results.players.length > 0 && Array.isArray(results.players[0].detailed) && results.players[0].detailed.length === 0;
+
+    if (results.players.length === 1) {
+        // Single-player game
+        const player = results.players[0];
+
+        const totalCorrect = Object.values(player.stats).reduce(
+            (sum, cat) => sum + (cat.correct || 0),
+            0
+        );
+        finalResultsMessage += `<li><strong>Player:</strong> ${player.name}</li>`;
+        finalResultsMessage += `<li><strong>Score:</strong> ${totalCorrect}</li>`;
+
+        for (const category in player.stats) {
+            if (category !== 'detailed') {
+                const { correct, total, totalTime } = player.stats[category];
+                if (total > 0) {
+                    finalResultsMessage += `<li>${category}: ${correct} correct out of ${total}, ${totalTime.toFixed(2)} seconds</li>`;
+                }
+            }
+        }
+
+        // Skip detailed stats in Blitz mode
+        if (!isBlitzMode) {
+            player.detailed.forEach((detail, index) => {
+                if (!detail) return;
+                const statusClass = detail.skipped
+                    ? "skipped"
+                    : detail.isCorrect
+                    ? "correct"
+                    : "incorrect";
+
+                const statusLabel = detail.skipped
+                    ? "Skipped"
+                    : detail.isCorrect
+                    ? "Correct"
+                    : "Incorrect";
+
+                finalResultsMessage += `<li class="${statusClass}">Q${index + 1}: ${detail.question} - Time: ${detail.time.toFixed(2)}s</li>`;
+                finalResultsMessage += `<li>&nbsp;&nbsp;&nbsp;Status: ${statusLabel}</li>`;
+                finalResultsMessage += `<li>&nbsp;&nbsp;&nbsp;Submitted: ${detail.submittedAnswer || 'N/A'}, Correct: ${detail.correctAnswer}</li>`;
+            });
+        }
+
+    } else {
+        // Multiplayer game
+        results.players.forEach(player => {
+            const totalCorrect = Object.values(player.stats).reduce(
+                (sum, cat) => sum + (cat.correct || 0),
+                0
+            );
+
+            finalResultsMessage += `<li><strong>${player.name}:</strong> ${totalCorrect} points</li>`;
+
+            for (const category in player.stats) {
+                if (category !== 'detailed') {
+                    const { correct, total, totalTime } = player.stats[category];
+                    if (total > 0) {
+                        finalResultsMessage += `<li>${category}: ${correct} correct out of ${total}, ${totalTime.toFixed(2)} seconds</li>`;
+                    }
+                }
+            }
+
+            if (!isBlitzMode) {
+                player.detailed.forEach((detail, index) => {
+                    if (!detail) return;
+
+                    let statusClass = detail.skipped
+                        ? "skipped"
+                        : detail.isCorrect
+                        ? "correct"
+                        : "incorrect";
+
+                    let statusLabel = detail.skipped
+                        ? "Skipped"
+                        : detail.isCorrect
+                        ? "Correct"
+                        : "Incorrect";
+
+                    finalResultsMessage += `<li class="${statusClass}">Q${index + 1}: ${detail.question} - Time: ${detail.time.toFixed(2)}s</li>`;
+                    finalResultsMessage += `<li>&nbsp;&nbsp;&nbsp;Status: ${statusLabel}</li>`;
+                    finalResultsMessage += `<li>&nbsp;&nbsp;&nbsp;Submitted: ${detail.submittedAnswer || 'N/A'}, Correct: ${detail.correctAnswer}</li>`;
+                });
+            }
+        });
+
+// Highlight the winner (only for non-Blitz modes)
+if (!isBlitzMode) {
+    finalResultsMessage += `<li class="results-winner">Winner: ${results.winner}</li>`;
+}
+    }
+
+    // Add comparative stats if available
+    if (!isBlitzMode && results.comparative && results.players.length > 1) {
+        const filteredComparative = results.comparative.filter(row =>
+            results.players.some(player => row.times[player.name] !== "N/A")
+        );
+
+        const table = document.createElement("table");
+        table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Q#</th>
+            ${results.players.map(player => `<th>${player.name}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredComparative
+            .map(
+              (row) => `
+            <tr>
+              <td>${row.questionNumber}</td>
+              ${results.players
+                .map(
+                  player =>
+                    `<td style="color: ${getTimeColor(row.times[player.name])};">${row.times[player.name]}</td>`
+                )
+                .join('')}
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+        `;
+        finalResultsMessage += table.outerHTML;
+    }
+
+    finalResultsMessage += "</ul>";
+
+// Add mini-match results table for Blitz mode
+if (isBlitzMode && results.blitzMatchHistory && results.blitzMatchHistory.length > 0) {
+    const players = results.players.map(p => p.name);
+    const matchHistory = results.blitzMatchHistory;
+
+    const table = document.createElement("table");
+    table.classList.add("mini-match-table");
+
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML = "<th>Player</th>" + matchHistory.map((_, i) => `<th>M${i + 1}</th>`).join('');
+    table.appendChild(headerRow);
+
+    players.forEach(playerName => {
+        const row = document.createElement("tr");
+        const scores = matchHistory.map(match => match[playerName] ?? "");
+        row.innerHTML = `<td>${playerName}</td>` + scores.map(score => `<td>${score}</td>`).join('');
+        table.appendChild(row);
+    });
+
+    finalResultsMessage += "<br><h3>Mini-Match Summary</h3>";
+    finalResultsMessage += table.outerHTML;
+}
+
+// Add final Blitz scoring summary if applicable
+if (isBlitzMode && results.players.length === 2 && results.blitzMatchHistory?.length > 0) {
+    const [p1, p2] = results.players;
+    const p1Name = p1.name;
+    const p2Name = p2.name;
+
+    const p1Points = results.blitzMatchHistory.reduce((sum, match) => sum + (match[p1Name] || 0), 0);
+    const p2Points = results.blitzMatchHistory.reduce((sum, match) => sum + (match[p2Name] || 0), 0);
+
+    // Compute match wins based on which player had more points in each mini-match
+    let p1Wins = 0;
+    let p2Wins = 0;
+
+    results.blitzMatchHistory.forEach((match, i) => {
+        const p1Score = match[p1Name] ?? 0;
+        const p2Score = match[p2Name] ?? 0;
+        if (p1Score > p2Score) {
+            p1Wins++;
+            console.log(`[MiniMatch ${i + 1}] Winner: ${p1Name}`);
+        } else if (p2Score > p1Score) {
+            p2Wins++;
+            console.log(`[MiniMatch ${i + 1}] Winner: ${p2Name}`);
+        } else {
+            console.log(`[MiniMatch ${i + 1}] Tie`);
+        }
+    });
+
+    const matchComplete = p1Wins >= 5 || p2Wins >= 5;
+
+    console.log(`[Blitz Score Calc] ${p1Name} — Points: ${p1Points}, Wins: ${p1Wins}`);
+    console.log(`[Blitz Score Calc] ${p2Name} — Points: ${p2Points}, Wins: ${p2Wins}`);
+    console.log(`[Blitz Score Calc] Match Complete: ${matchComplete}`);
+
+    let p1Score = 50;
+    let p2Score = 50;
+
+    if (matchComplete) {
+    const matchDiff = (p1Wins - p2Wins) * 5;
+    p1Score += matchDiff;
+    p2Score -= matchDiff;
+
+    const p1Eligible = p1Wins > p2Wins && p1Points > p2Points;
+    const p2Eligible = p2Wins > p1Wins && p2Points > p1Points;
+
+    console.log(`[Blitz Score Calc] ${p1Name} eligible for point diff bonus: ${p1Eligible}`);
+    console.log(`[Blitz Score Calc] ${p2Name} eligible for point diff bonus: ${p2Eligible}`);
+
+    if (p1Eligible || p2Eligible) {
+            const pointDiff = Math.abs(p1Points - p2Points);
+            const bonusWinner = Math.ceil(pointDiff / 2);
+            const bonusLoser = Math.floor(pointDiff / 2);
+
+    if (p1Eligible) {
+        console.log(`[Blitz Score Calc] ${p1Name} point diff bonus: +${bonusWinner}`);
+        console.log(`[Blitz Score Calc] ${p2Name} point diff penalty: -${bonusLoser}`);
+        p1Score += bonusWinner;
+        p2Score -= bonusLoser;
+    } else if (p2Eligible) {
+        console.log(`[Blitz Score Calc] ${p2Name} point diff bonus: +${bonusWinner}`);
+        console.log(`[Blitz Score Calc] ${p1Name} point diff penalty: -${bonusLoser}`);
+        p2Score += bonusWinner;
+        p1Score -= bonusLoser;
+    }
+}
+
+} else {
+    console.log(`[Blitz Score Calc] Match incomplete — both scores stay at 50.`);
+}
+
+    // Final adjustment: round one up and the other down to ensure total = 100
+    if (p1Score > p2Score) {
+        p1Score = Math.min(100, Math.ceil(p1Score));
+        p2Score = Math.max(0, 100 - p1Score);
+    } else {
+        p2Score = Math.min(100, Math.ceil(p2Score));
+        p1Score = Math.max(0, 100 - p2Score);
+    }
+
+    console.log(`[Blitz Score Final] ${p1Name}: ${p1Score}, ${p2Name}: ${p2Score}`);
+
+    finalResultsMessage += `<br><h3>Final Calculation League Scores</h3>`;
+    finalResultsMessage += `<ul><li>${p1Name}: ${p1Score}</li><li>${p2Name}: ${p2Score}</li></ul>`;
+}
+
+    resultsContent.innerHTML = finalResultsMessage;
+    resultsModal.classList.add('active');
+
+if (isBlitzMode) {
+    resultsModal.classList.add('fullscreen-blitz');
+    document.body.classList.add('blitz-results-active');
+} else {
+    resultsModal.classList.remove('fullscreen-blitz');
+    document.body.classList.remove('blitz-results-active'); 
+}
+}
+
+// Helper function to determine the color for time
+function getTimeColor(time) {
+    if (time === "N/A") return "gray"; // Unanswered
+    if (parseFloat(time) < 10) return "green"; // Arbitrary logic for "good" time
+    if (parseFloat(time) < 20) return "blue"; // Medium time
+    return "red"; // Slow response
+}
+
+        socket.on('gameStats', (message) => {
+            displayResults(message);
+        });
+
+        function displayResults(results) {
+    const resultsModal = document.getElementById('resultsModal');
+    const resultsContent = document.getElementById('resultsContent');
+    resultsContent.innerHTML = results;
+
+    // Determine if this is a Blitz match based on results content or mode flag
+    const isBlitzMode = results.includes('Mini-Match Summary'); // Adjust if you have a better flag
+
+    if (isBlitzMode) {
+        resultsModal.classList.add('fullscreen-blitz');
+        document.body.classList.add('blitz-results-active');
+    } else {
+        resultsModal.classList.remove('fullscreen-blitz');
+        document.body.classList.remove('blitz-results-active');
+    }
+
+    resultsModal.style.display = "block";
+}
+
+    document.getElementById('closeResultsModal').onclick = function () {
+    document.getElementById('resultsModal').classList.remove('active');
+    document.body.classList.remove('blitz-results-active'); // ✅ cleanup fullscreen scroll override
+    window.location.reload(); // ✅ restore fresh app state
+};
+
+        socket.on('gameStats', (statsMessage) => {
+            displayPlayerStats(statsMessage);
+        });
+
+        function displayPlayerStats(statsMessage) {
+            const formattedStats = statsMessage.split('\n').map(stat => `<p>${stat}</p>`).join('');
+
+            const statsModal = document.getElementById('playerStatsModal');
+            const statsContent = document.getElementById('playerStatsContent');
+            statsContent.innerHTML = formattedStats;
+            statsModal.style.display = "block";
+        }
+
+        document.getElementById('closePlayerStatsModal').addEventListener('click', function() {
+            document.getElementById('playerStatsModal').style.display = "none";
+            window.location.reload();
+        });
+
+        socket.on('blitzIntermission', ({ countdown, nextStatCategories }) => {
+    const intermissionInfo = document.getElementById('intermissionInfo');
+    const intermissionCountdown = document.getElementById('intermissionCountdown');
+    const intermissionStats = document.getElementById('intermissionStats');
+    const questionContainer = document.getElementById('questionContainer');
+
+    // Hide question area and show intermission
+    questionContainer.style.display = 'none';
+    intermissionInfo.style.display = 'block';
+
+    // Show stat categories
+    intermissionStats.innerText = `Next Stats: ${nextStatCategories.join(', ')}`;
+
+    // Begin countdown
+    let remaining = countdown;
+    intermissionCountdown.innerText = `Next match starts in: ${remaining}s`;
+
+    const countdownInterval = setInterval(() => {
+        remaining--;
+        intermissionCountdown.innerText = `Next match starts in: ${remaining}s`;
+
+        if (remaining <= 0) {
+            clearInterval(countdownInterval);
+            intermissionInfo.style.display = 'none';
+            questionContainer.style.display = 'block'; // Questions will resume
+            document.getElementById('intermissionSummary').style.display = 'none';
+        }
+    }, 1000);
+});
+
+let currentCategories = [];
+
+socket.on('blitzCategories', (categories) => {
+    console.log('[Client] Received categories for next mini-match:', categories);
+
+    const nextCategoriesDiv = document.getElementById('nextCategories');
+
+    if (!nextCategoriesDiv) {
+        console.warn('[Client] nextCategories element not found.');
+        return;
+    }
+
+    nextCategoriesDiv.innerHTML = '';
+    if (Array.isArray(categories) && categories.length > 0) {
+        categories.forEach(cat => {
+            const catEl = document.createElement('div');
+            catEl.textContent = cat;
+            nextCategoriesDiv.appendChild(catEl);
+        });
+    } else {
+        nextCategoriesDiv.textContent = 'Categories not available.';
+    }
+});
+
+socket.on('startBlitzIntermission', ({ countdown }) => {
+    const intermissionDiv = document.getElementById('intermissionInfo');
+    const countdownDisplay = document.getElementById('intermissionCountdown');
+    const questionContainer = document.getElementById('questionContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const timerElement = document.getElementById('timer');
+    const stopwatch = document.getElementById('stopwatch');
+    const scoreCounter = document.getElementById('correctAnswersCounter');
+
+    if (!intermissionDiv || !countdownDisplay) {
+        console.warn('[Client] Missing intermission elements.');
+        return;
+    }
+
+    if (questionContainer) questionContainer.style.display = 'none';
+    if (resultsContainer) resultsContainer.style.display = 'none';
+    if (timerElement) timerElement.style.display = 'none';
+    if (stopwatch) stopwatch.style.display = 'none';
+    if (scoreCounter) scoreCounter.style.display = 'none';
+
+    intermissionDiv.style.display = 'block';
+
+    console.log(`[Client] Intermission started. Countdown: ${countdown} seconds`);
+
+    let timeLeft = countdown;
+    countdownDisplay.textContent = `Next mini-match begins in ${timeLeft} seconds`;
+
+    const timer = setInterval(() => {
+        console.log(`[Client] Intermission countdown: ${timeLeft} seconds`);
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            intermissionDiv.style.display = 'none';
+            if (timerElement) timerElement.style.display = 'block';
+            if (stopwatch) stopwatch.style.display = 'block';
+            if (scoreCounter) scoreCounter.style.display = 'block';
+            document.getElementById('blitzFormatDisplay').style.display = 'none';  //
+            document.getElementById('intermissionSummary').style.display = 'none'; 
+        } else {
+            countdownDisplay.textContent = `Next mini-match begins in ${timeLeft} seconds`;
+        }
+    }, 1000);
+});
+
+    function showBlitzRandomizationButtons() {
+        const container = document.getElementById('blitzRandomizationButtons');
+        container.style.display = 'block';
+
+        setTimeout(() => {
+            container.style.display = 'none';
+        }, 20000); // Hide after 20 seconds
+    }
+
+    function requestFormatChange(categoryType) {
+        socket.emit('randomizeBlitzCategory', { roomName: currentRoom, categoryType });
+        document.getElementById('blitzRandomizationButtons').style.display = 'none';
+    }
+
+    socket.on('blitzFormatsUpdated', ({ standard, complex, random }) => {
+    const display = document.getElementById('blitzFormatDisplay');
+    if (!display) return;
+
+    const intermissionColor = document.getElementById('intermissionColorPicker')?.value || localStorage.getItem('intermissionColor') || '#2c3e50';
+
+    display.innerHTML = `
+    <div id="newFormatsDisplay" style="margin-top: 30px; text-align: center;">
+        <div class="intermission-colored" style="font-size: 32px; font-weight: bold; margin-bottom: 12px;">New Formats:</div>
+        <div class="intermission-colored" style="font-size: 36px; font-weight: bold; margin: 5px 0;">${standard}</div>
+        <div class="intermission-colored" style="font-size: 36px; font-weight: bold; margin: 5px 0;">${complex}</div>
+        <div class="intermission-colored" style="font-size: 36px; font-weight: bold; margin: 5px 0;">${random}</div>
+    </div>
+`;
+    display.style.display = 'block';
+
+    display.querySelectorAll('.intermission-colored').forEach(element => {
+    element.style.color = intermissionColor;
+});
+});
+
+
+        function resetGameState() {
+            gameEnded = false;
+        }
+
+        document.getElementById('startButton').addEventListener('click', () => {
+            isRejoining = false;
+            resetGameState();
+        });
+
+        function displayQuestion(question) {
     if (question && question.text) {
         const questionElement = document.getElementById('question');
+        const selectedMode = document.getElementById('taskMode').value || document.getElementById('leagueMode').value;
 
-        if (question.isFromList) {
+        console.log("Processing question:", question);
+
+        // Check if it's a "sum of squares" question
+        if (question.subCategory === 'sumOfSquares') {
+            console.log("Processing sum of squares question:", question.text); // Log to verify
+
+            const number = question.text.match(/\d+$/);  // Extract the number at the end of the string
+            const questionWithoutNumber = question.text.replace(/\d+$/, '');  // Remove the number from the text
+
+            if (number) {
+                questionElement.innerHTML = `${questionWithoutNumber} <span style="margin-left: 10px;">${number}</span>`;
+            } else {
+                questionElement.textContent = question.text;
+            }
+
+            questionElement.classList.remove('vertical-format');
+
+        // Check if it's a "systems of equations" question
+        } else if (question.subCategory === 'systemsOfEquations') {
+            const equations = question.text.split('\n').map(eq => `<div>${eq}</div>`).join('');
+            questionElement.innerHTML = equations;
+            questionElement.classList.remove('vertical-format');
+
+        // Other question types (e.g., addition, multiplication, etc.)
+    } else {
+        const multiplicationCount = (question.text.match(/[*×]/g) || []).length;
+        const divisionCount = (question.text.match(/[/÷]/g) || []).length;
+        if (multiplicationCount >= 4 || divisionCount >= 4) {
+                // Exclude from vertical formatting if 4 or more multiplications
+                questionElement.textContent = question.text;
+                questionElement.classList.remove('vertical-format');
+        } else if (selectedMode === "additionTenDigit" || selectedMode === "multiplication" || 
+                   selectedMode === "division" || selectedMode === "modulus" || 
+                   selectedMode === "squareRoots" || selectedMode === "nthRoots" || 
+                   selectedMode === "factorization" || selectedMode === "decimalRoots" || 
+                   selectedMode === "decimalExponents" || question.isFromList) {
+
             questionElement.innerHTML = formatQuestionVertically(question.text);
             questionElement.classList.add('vertical-format');
+
         } else {
             questionElement.textContent = question.text;
             questionElement.classList.remove('vertical-format');
         }
-
+    }
         document.getElementById('questionContainer').style.display = 'block';
         document.getElementById('answer').value = '';
         document.getElementById('answer').focus();
         startQuestionTimer();
-    } else {
     }
 }
-function startQuestionTimer() {
-    let timeLeft = 30; // 30 seconds for each question
-    document.getElementById('timer').textContent = timeLeft;
-    
-    clearInterval(questionTimer); // Clear existing timer
-    
-    questionTimer = setInterval(() => {
-        timeLeft--;
-        document.getElementById('timer').textContent = timeLeft;
-        if (timeLeft <= 0) {
+
+        function startQuestionTimer() {
+            let timeLeft = document.getElementById('leagueMode').value ? 30 : 60;
+            document.getElementById('timer').textContent = timeLeft;
+            
             clearInterval(questionTimer);
-            const playerName = players[socket.id];
-            socket.emit('timerExpired', currentRoom, playerName); // Send playerName instead of socket.id
+            
+            questionTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(questionTimer);
+                    const playerName = players[socket.id];
+                    socket.emit('timerExpired', currentRoom, playerName);
+                }
+            }, 1000);
         }
-    }, 1000);
 
-    socket.on('startTimer', () => {
-    startElapsedTimeTimer();
-});
-}
-function startElapsedTimeTimer(startTimeMillis) {
-    clearInterval(elapsedTimeTimer);
+        function startElapsedTimeTimer(startTimeMillis) {
+            clearInterval(elapsedTimeTimer);
 
-    if (typeof startTimeMillis !== 'number') {
-        console.error('Invalid startTimeMillis:', startTimeMillis);
-        return;
+            if (typeof startTimeMillis !== 'number') {
+                console.error('Invalid startTimeMillis:', startTimeMillis);
+                return;
+            }
+
+            elapsedTimeTimer = setInterval(() => {
+                const elapsed = Math.round((new Date().getTime() - startTimeMillis) / 1000);
+                document.getElementById('stopwatch').textContent = `Elapsed Time: ${elapsed}s`;
+            }, 1000);
+        }
+
+        document.getElementById('submitAnswer').addEventListener('click', submitAnswer);
+
+        document.getElementById('toggleSign').addEventListener('click', function() {
+            var answerInput = document.getElementById('answer');
+            var answerValue = answerInput.value;
+
+            if (answerValue && !isNaN(answerValue)) {
+                answerValue = -answerValue;
+                answerInput.value = answerValue;
+            }
+        });
+
+        const leagueModeDropdown = document.getElementById('leagueMode');
+        const taskModeDropdown = document.getElementById('taskMode');
+        const taskLevelDropdown = document.getElementById('taskLevel');
+
+        leagueModeDropdown.addEventListener('change', () => {
+            if (leagueModeDropdown.value) {
+                taskModeDropdown.disabled = true;
+                taskLevelDropdown.disabled = true;
+            } else {
+                taskModeDropdown.disabled = false;
+                taskLevelDropdown.disabled = false;
+            }
+        });
+
+        taskModeDropdown.addEventListener('change', () => {
+            if (taskModeDropdown.value) {
+                leagueModeDropdown.disabled = true;
+            } else {
+                leagueModeDropdown.disabled = false;
+            }
+        });
+
+        // Toggle formatting options visibility
+        const toggleFormattingOptionsButton = document.getElementById('toggleFormattingOptions');
+        const formattingOptionsContainer = document.getElementById('formattingOptions');
+
+        toggleFormattingOptionsButton.addEventListener('click', () => {
+            if (formattingOptionsContainer.style.display === 'none') {
+                formattingOptionsContainer.style.display = 'block';
+                toggleFormattingOptionsButton.textContent = 'Hide Formatting Options ▲';
+            } else {
+                formattingOptionsContainer.style.display = 'none';
+                toggleFormattingOptionsButton.textContent = 'Show Formatting Options ▼';
+            }
+        });
+        document.getElementById("themePresetDropdown").addEventListener("change", function () {
+    const selected = this.value;
+
+    const presets = {
+        terminal: {
+        backgroundColor: "#000000",   // black
+        textColor: "#ff0000",         // red
+        infoColor: "#ffff00",         // yellow
+        intermissionColor: "#00ff00"  // bright green
+},
+    dangerZone: {
+        backgroundColor: "#1c1c1c",   // dark gray
+        textColor: "#ff0000",         // red
+        infoColor: "#ffff00",         // yellow
+        intermissionColor: "#00ff00"  // lime
+    },
+    arcticBlast: {
+        backgroundColor: "#0d1b2a",   // navy black
+        textColor: "#ffffff",         // pure white
+        infoColor: "#00d9ff",         // cyan
+        intermissionColor: "#ff2e63"  // hot pink
+    },
+    purpleVoltage: {
+        backgroundColor: "#120136",   // dark indigo
+        textColor: "#ffffff",         // white
+        infoColor: "#ff00ff",         // magenta
+        intermissionColor: "#39ff14"  // bright green
+    },
+    opticWhite: {
+        backgroundColor: "#ffffff",   // white
+        textColor: "#000000",         // black
+        infoColor: "#ff0000",         // red
+        intermissionColor: "#007bff"  // blue
+    },
+    retroSun: {
+        backgroundColor: "#fff200",   // vivid yellow
+        textColor: "#000000",         // black
+        infoColor: "#ff5733",         // orange-red
+        intermissionColor: "#28a745"  // green
+    },
+        midnight: {
+            backgroundColor: "#0b0c10",
+            textColor: "#c5c6c7",
+            infoColor: "#66fcf1",
+            intermissionColor: "#45a29e"
+        },
+        forest: {
+            backgroundColor: "#1b3b2f",
+            textColor: "#e0f8ec",
+            infoColor: "#2ecc71",
+            intermissionColor: "#27ae60"
+        },
+        ocean: {
+            backgroundColor: "#011f4b",
+            textColor: "#b3cde0",
+            infoColor: "#005b96",
+            intermissionColor: "#03396c"
+        },
+        slate: {
+            backgroundColor: "#2f2f2f",
+            textColor: "#eeeeee",
+            infoColor: "#999999",
+            intermissionColor: "#cccccc"
+        },
+        desert: {
+            backgroundColor: "#3e2723",
+            textColor: "#fbe9e7",
+            infoColor: "#ff7043",
+            intermissionColor: "#bf360c"
+        },
+        twilight: {
+            backgroundColor: "#2c3e50",
+            textColor: "#ecf0f1",
+            infoColor: "#9b59b6",
+            intermissionColor: "#8e44ad"
+        },
+        charcoal: {
+            backgroundColor: "#222222",
+            textColor: "#dddddd",
+            infoColor: "#888888",
+            intermissionColor: "#444444"
+        },
+        sunset: {
+            backgroundColor: "#6a1b9a",
+            textColor: "#f3e5f5",
+            infoColor: "#ff4081",
+            intermissionColor: "#d81b60"
+        },
+        midcentury: {
+            backgroundColor: "#3a3a3a",
+            textColor: "#f4f4f4",
+            infoColor: "#f57c00",
+            intermissionColor: "#fbc02d"
+        },
+        pastel: {
+            backgroundColor: "#fdf6e3",
+            textColor: "#657b83",
+            infoColor: "#b58900",
+            intermissionColor: "#cb4b16"
+        },
+        warmlight: {
+            backgroundColor: "#fff8e1",
+            textColor: "#5d4037",
+            infoColor: "#ff6f00",
+            intermissionColor: "#f57c00"
+        },
+        ice: {
+            backgroundColor: "#e0f7fa",
+            textColor: "#006064",
+            infoColor: "#00acc1",
+            intermissionColor: "#00838f"
+        },
+        candyPop: {
+        backgroundColor: "#ffdde1",  // soft pink
+        textColor: "#c70039",        // bold red
+        infoColor: "#900c3f",        // wine
+        intermissionColor: "#ff5733" // orange coral
+    },
+    technoGlow: {
+        backgroundColor: "#0f0f3e",  // dark indigo
+        textColor: "#00ffe7",        // neon aqua
+        infoColor: "#00c3ff",        // bright blue
+        intermissionColor: "#ff00c8" // hot pink
+    },
+    jungleBeat: {
+        backgroundColor: "#007f5f",  // dark green
+        textColor: "#fdfcdc",        // banana cream
+        infoColor: "#f4a261",        // mango
+        intermissionColor: "#e76f51" // papaya
+    },
+    citrusBlast: {
+        backgroundColor: "#fef9ef",  // lemon cream
+        textColor: "#ff9f1c",        // orange
+        infoColor: "#ffbf69",        // melon
+        intermissionColor: "#cbf3f0" // mint blue
+    },
+    bubblegum: {
+        backgroundColor: "#f8c1d8",  // pink pastel
+        textColor: "#6a0572",        // plum
+        infoColor: "#ab83a1",        // dusty rose
+        intermissionColor: "#ff6f91" // bright pink
+    },
+    peacock: {
+        backgroundColor: "#1b3a4b",  // navy teal
+        textColor: "#e0fbfc",        // light mint
+        infoColor: "#76c893",        // teal-green
+        intermissionColor: "#f7b267" // apricot
+    },
+    rocketFuel: {
+        backgroundColor: "#1a1a2e",  // space black
+        textColor: "#e94560",        // crimson
+        infoColor: "#0f3460",        // deep blue
+        intermissionColor: "#53354a" // plum purple
+    },
+    aurora: {
+        backgroundColor: "#2a2a72",  // twilight blue
+        textColor: "#ffd700",        // gold
+        infoColor: "#9d0191",        // violet
+        intermissionColor: "#00ffab" // mint
+    },
+    lemonade: {
+        backgroundColor: "#fdf6e3",  // eggshell
+        textColor: "#ffdc00",        // lemonade yellow
+        infoColor: "#ffaa00",        // orange
+        intermissionColor: "#00bcd4" // bright teal
+    },
+    coralReef: {
+        backgroundColor: "#ff9a8b",  // coral
+        textColor: "#4a4e69",        // ink
+        infoColor: "#f67280",        // rose
+        intermissionColor: "#c06c84" // mauve
+    },
+    vaporwave: {
+        backgroundColor: "#ff71ce",  // pink neon
+        textColor: "#01cdfe",        // sky blue
+        infoColor: "#05ffa1",        // mint neon
+        intermissionColor: "#b967ff" // purple neon
+    },
+    cherrySoda: {
+        backgroundColor: "#f72585",  // cherry
+        textColor: "#ffffff",        // white
+        infoColor: "#7209b7",        // grape
+        intermissionColor: "#3a0ca3" // blueberry
     }
+    };
 
-    elapsedTimeTimer = setInterval(() => {
-        const elapsed = Math.round((new Date().getTime() - startTimeMillis) / 1000);
-        document.getElementById('stopwatch').textContent = `Elapsed Time: ${elapsed}s`;
-    }, 1000);
-}
+    const theme = presets[selected];
+    if (!theme) return;
 
-    document.getElementById('submitAnswer').addEventListener('click', submitAnswer);
+    document.getElementById("bgColorPicker").value = theme.backgroundColor;
+    document.getElementById("textColorPicker").value = theme.textColor;
+    document.getElementById("infoColorPicker").value = theme.infoColor;
+    document.getElementById("intermissionColorPicker").value = theme.intermissionColor;
+});
     </script>
 </body>
 </html>
